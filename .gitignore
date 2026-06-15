@@ -1,0 +1,39 @@
+## .NET / C#
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+.idea/
+*.DS_Store
+*.swp
+*~
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## Logs and test results
+*.log
+*.log.*
+[Tt]est[Rr]esult*/
+coverage*/
+
+## Release outputs
+release/
+artifacts/
+.runtime-staging/
+
+## Local agent state
+.agents/
+.codex/
+.trellis/
+.claude/
