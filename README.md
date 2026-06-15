@@ -43,10 +43,19 @@ Then connect a display client to `http://127.0.0.1:32145` with token `dev-token`
 
 ## API And Display Clients
 
-- Full API reference: `docs/api-reference.md`
-- Integration patterns for other apps: `docs/integration-guide.md`
-- Runtime/display ownership contract: `docs/runtime-display-contract.md`
-- Display client quickstart: `docs/external-display-client.md`
+- [Documentation index](docs/README.md)
+- [Full API reference](docs/api-reference.en.md)
+- [Integration patterns for other apps](docs/integration-guide.en.md)
+- [Runtime/display ownership contract](docs/runtime-display-contract.md)
+- [Display client quickstart](docs/external-display-client.en.md)
+
+Chinese docs:
+
+- [中文文档索引](docs/README_CN.md)
+- [完整 API 文档](docs/api-reference.md)
+- [其他应用集成方式](docs/integration-guide.md)
+- [Runtime/展示端职责边界](docs/runtime-display-contract.zh-CN.md)
+- [展示端快速开始](docs/external-display-client.md)
 
 A minimal console display is available in `samples/external-display-console`:
 
@@ -63,4 +72,3 @@ Create a Runtime ZIP with `CodeIsland.RuntimeHost.exe`, `CodeIsland.Bridge.exe`,
 ```
 
 The Windows HUD can download Runtime update manifests and promote the ZIP payload into its local Runtime cache.
-

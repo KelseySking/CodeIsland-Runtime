@@ -1,8 +1,10 @@
 # 外部展示客户端快速开始
 
+[English](external-display-client.en.md) | [文档索引](README_CN.md)
+
 这份文档面向想在 WPF HUD 之外开发 CodeIsland 展示端的开发者，例如 Web UI、插件、终端面板、硬件桥接器或后续移动端 companion。
 
-稳定边界是 `docs/runtime-display-contract.md` 中描述的本地 Runtime API；完整 endpoint、DTO 和 WebSocket 事件参考见 `docs/api-reference.md`；桌面、Web、移动端、插件、硬件屏幕等集成形态参考 `docs/integration-guide.md`。展示端应该依赖 REST DTO、WebSocket 事件和操作端点，不应该依赖 WPF ViewModel、Hub 具体类、Named Pipe hook 处理、transcript 文件或 source-specific 响应构造器。
+稳定边界是 [展示端合同](runtime-display-contract.zh-CN.md) 中描述的本地 Runtime API；完整 endpoint、DTO 和 WebSocket 事件参考见 [API Reference 中文](api-reference.md)；桌面、Web、移动端、插件、硬件屏幕等集成形态参考 [集成指南](integration-guide.md)。展示端应该依赖 REST DTO、WebSocket 事件和操作端点，不应该依赖 WPF ViewModel、Hub 具体类、Named Pipe hook 处理、transcript 文件或 source-specific 响应构造器。
 
 ## Runtime 连接
 
@@ -140,5 +142,7 @@ dotnet run --project samples/external-display-console -- --token <api_token>
 * question dismiss。
 
 示例内部定义了匹配公开 JSON contract 的最小本地 DTO。正式 SDK 包在 Runtime contract 稳定到可发布之前仍不属于当前范围。
+
+
 
 

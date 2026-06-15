@@ -1,0 +1,24 @@
+# CodeIsland Runtime 文档
+
+[English](README.md)
+
+从这里开始，不需要自己在仓库里找文档。
+
+| 主题 | 文档 |
+| --- | --- |
+| 完整 REST/WebSocket API 文档 | [API Reference 中文](api-reference.md) |
+| 其他应用如何集成 Runtime | [集成指南](integration-guide.md) |
+| Runtime/展示端职责边界 | [展示端合同](runtime-display-contract.zh-CN.md) |
+| 展示端快速开始 | [外部展示端快速开始](external-display-client.md) |
+| 英文 API 文档 | [API Reference](api-reference.en.md) |
+| 英文集成指南 | [Integration Guide](integration-guide.en.md) |
+| 英文职责边界 | [Display Contract](runtime-display-contract.md) |
+| 英文快速开始 | [External Display Quickstart](external-display-client.en.md) |
+
+前端/展示端开发者建议按这个顺序阅读：
+
+1. [集成指南](integration-guide.md)
+2. [API Reference 中文](api-reference.md)
+3. [展示端合同](runtime-display-contract.zh-CN.md)
+
+`../samples/external-display-console` 是可运行的接口示例。

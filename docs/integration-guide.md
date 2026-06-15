@@ -1,5 +1,7 @@
 # CodeIsland Runtime Integration Guide
 
+[English](integration-guide.en.md) | [文档索引](README_CN.md)
+
 本文档说明其他应用如何集成 CodeIsland Runtime。这里的“其他应用”包括 Windows/Mac/Linux 桌面应用、Web UI、浏览器插件、IDE 插件、手机 companion、硬件屏幕、企业内部面板，以及后续新的 CLI source adapter。
 
 Runtime 的核心原则是：Runtime 做中心化状态和 CLI hook 控制面，其他应用只做展示、交互和设备体验。除非你是在开发 Runtime 自身或新增 source adapter，否则不要直接依赖 `CodeIsland.Core`、`CodeIsland.Hub`、Named Pipe、transcript 文件或 hook response builder。
@@ -126,7 +128,7 @@ IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 - 在 hook 安装/修复路径中加入该 source。
 - 在 Bridge 或 source resolver 中识别该 CLI。
 - 补充 Core/Bridge/Hub 测试。
-- 更新 `docs/api-reference.md` 和 `docs/runtime-display-contract.md`。
+- 更新 [API Reference 中文](api-reference.md) 和 [展示端合同](runtime-display-contract.zh-CN.md)。
 
 展示端只会看到新的 `source`、`sourceDisplayName`、icon key、capabilities 和 session/pending DTO，不需要知道 source 内部 hook 格式。
 
@@ -161,3 +163,5 @@ IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 10. 重启 Runtime 并验证 `/api/health`。
 
 共享远程 Runtime 不应被任意展示端静默更新或关闭，除非用户明确选择了该操作。
+
+

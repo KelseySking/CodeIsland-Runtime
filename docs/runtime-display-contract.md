@@ -1,14 +1,16 @@
 # CodeIsland Runtime Display Contract
 
+[简体中文](runtime-display-contract.zh-CN.md) | [Documentation index](README.md)
+
 This document defines the intended boundary between the CodeIsland Runtime and any display client. Runtime is the centralized control plane for CodeIsland: it ingests CLI hook activity from configured sources, normalizes session and pending-action state, and exposes that state to one or more display clients. A display client can be the current WPF HUD, a web UI, a mobile app, a hardware display, or a third-party integration.
 
 The current Windows HUD starts or connects to `CodeIsland.RuntimeHost` and consumes Runtime state through the public REST/WebSocket contract. The Runtime source is being extracted into the independent `CodeIsland-Runtime` repository, while the Windows repository remains the official WPF display client.
 
 Developer entry points:
 
-* `docs/external-display-client.md` explains how to connect a display client, subscribe to events, and send pending-action operations.
+* [External Display Quickstart](external-display-client.en.md) explains how to connect a display client, subscribe to events, and send pending-action operations.
 * `samples/external-display-console/` is a no-dependency .NET console sample that uses the public REST/WebSocket contract.
-* `docs/runtime-repository-split-plan.md` defines the repository split plan for moving Runtime/Hub into an independent Runtime repository.
+* [API Reference](api-reference.en.md) and [Integration Guide](integration-guide.en.md) are the main references for display-client developers.
 
 ## Ownership Boundary
 
@@ -198,4 +200,6 @@ Recommended migration order:
 5. Add an independent Runtime host process.
 6. Convert WPF HUD into an API/WebSocket client.
 7. Publish display-client docs and minimal sample.
-8. Extract Runtime-owned projects into the independent `CodeIsland-Runtime` repository per `docs/runtime-repository-split-plan.md`.
+8. Extract Runtime-owned projects into the independent `CodeIsland-Runtime` repository and keep this document as the display boundary contract.
+
+
