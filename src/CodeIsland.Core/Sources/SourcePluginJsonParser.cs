@@ -35,11 +35,17 @@ internal static class SourcePluginJsonParser
             var doc = JsonDocument.Parse(jsonContent);
             var root = doc.RootElement;
 
-            // Validate schema_version
-            if (!root.TryGetProperty("schema_version", out var schemaVersion) ||
-                schemaVersion.GetString() != "1.0")
+            // Validate schema_version (support 1.0 and 2.0)
+            if (!root.TryGetProperty("schema_version", out var schemaVersion))
             {
-                return (false, null, "Missing or invalid 'schema_version'. Expected '1.0'.",
+                return (false, null, "Missing 'schema_version'.",
+                    PluginValidationError.InvalidSchemaVersion);
+            }
+
+            var version = schemaVersion.GetString();
+            if (version != "1.0" && version != "2.0")
+            {
+                return (false, null, $"Invalid 'schema_version'. Expected '1.0' or '2.0', got: '{version}'",
                     PluginValidationError.InvalidSchemaVersion);
             }
 
@@ -142,14 +148,38 @@ internal static class SourcePluginJsonParser
                 }
             }
 
+            // Parse detection section (optional, schema 2.0)
+            DetectionRule? detectionRule = null;
+            if (root.TryGetProperty("detection", out var detectionElement))
+            {
+                var parseResult = ParseDetection(sourceKey, detectionElement);
+                if (!parseResult.Success)
+                {
+                    return (false, null, parseResult.Error, PluginValidationError.InvalidJson);
+                }
+                detectionRule = parseResult.DetectionRule;
+            }
+
+            // Parse hook_installation section (optional, schema 2.0)
+            HookInstallationSpec? hookSpec = null;
+            if (root.TryGetProperty("hook_installation", out var hookElement))
+            {
+                var parseResult = ParseHookInstallation(hookElement);
+                if (!parseResult.Success)
+                {
+                    return (false, null, parseResult.Error, PluginValidationError.InvalidJson);
+                }
+                hookSpec = parseResult.HookSpec;
+            }
+
             var metadata = new PluginMetadata(
                 sourceKey,
                 displayName,
                 iconName,
                 permissionStyle,
                 eventMappings,
-                Detection: null,  // TODO: Parse detection section in Phase 2A
-                HookInstallation: null);  // TODO: Parse hook_installation section in Phase 2A
+                Detection: detectionRule,
+                HookInstallation: hookSpec);
 
             return (true, metadata, null, null);
         }
@@ -191,5 +221,191 @@ internal static class SourcePluginJsonParser
     private static bool IsValidEventName(string eventName)
     {
         return ValidEventNames.Contains(eventName);
+    }
+
+    private static (bool Success, DetectionRule? DetectionRule, string? Error) ParseDetection(
+        string sourceKey,
+        JsonElement detectionElement)
+    {
+        if (detectionElement.ValueKind != JsonValueKind.Object)
+            return (false, null, "'detection' must be an object");
+
+        // Parse process_names
+        var processNames = new List<string>();
+        if (detectionElement.TryGetProperty("process_names", out var processNamesElement) &&
+            processNamesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in processNamesElement.EnumerateArray())
+            {
+                var name = item.GetString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(name))
+                    processNames.Add(name);
+            }
+        }
+
+        // Parse env_var_hints
+        var envVarHints = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (detectionElement.TryGetProperty("env_var_hints", out var envElement) &&
+            envElement.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var prop in envElement.EnumerateObject())
+            {
+                var pattern = prop.Value.GetString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(pattern))
+                    envVarHints[prop.Name] = pattern;
+            }
+        }
+
+        // Parse path_patterns
+        var pathPatterns = new List<string>();
+        if (detectionElement.TryGetProperty("path_patterns", out var pathElement) &&
+            pathElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in pathElement.EnumerateArray())
+            {
+                var pattern = item.GetString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(pattern))
+                    pathPatterns.Add(pattern);
+            }
+        }
+
+        // Parse priority (default 100)
+        var priority = 100;
+        if (detectionElement.TryGetProperty("priority", out var priorityElement))
+        {
+            if (priorityElement.ValueKind == JsonValueKind.Number)
+                priority = priorityElement.GetInt32();
+        }
+
+        // Validate using PluginValidator
+        var (isValid, error) = PluginValidator.ValidateDetection(
+            processNames,
+            envVarHints,
+            pathPatterns,
+            priority);
+
+        if (!isValid)
+            return (false, null, $"Detection validation failed: {error}");
+
+        var rule = new DetectionRule(
+            sourceKey,
+            processNames,
+            envVarHints,
+            pathPatterns,
+            priority);
+
+        return (true, rule, null);
+    }
+
+    private static (bool Success, HookInstallationSpec? HookSpec, string? Error) ParseHookInstallation(
+        JsonElement hookElement)
+    {
+        if (hookElement.ValueKind != JsonValueKind.Object)
+            return (false, null, "'hook_installation' must be an object");
+
+        // Parse format (required)
+        if (!hookElement.TryGetProperty("format", out var formatElement))
+            return (false, null, "Missing required 'hook_installation.format'");
+
+        var format = formatElement.GetString()?.Trim();
+        if (string.IsNullOrWhiteSpace(format))
+            return (false, null, "'hook_installation.format' cannot be empty");
+
+        // Parse config_path (required)
+        if (!hookElement.TryGetProperty("config_path", out var pathElement))
+            return (false, null, "Missing required 'hook_installation.config_path'");
+
+        var configPath = pathElement.GetString()?.Trim();
+        if (string.IsNullOrWhiteSpace(configPath))
+            return (false, null, "'hook_installation.config_path' cannot be empty");
+
+        // Parse events (required)
+        if (!hookElement.TryGetProperty("events", out var eventsElement) ||
+            eventsElement.ValueKind != JsonValueKind.Array)
+            return (false, null, "Missing or invalid 'hook_installation.events' (must be array)");
+
+        var events = new List<string>();
+        foreach (var item in eventsElement.EnumerateArray())
+        {
+            var eventName = item.GetString()?.Trim();
+            if (!string.IsNullOrWhiteSpace(eventName))
+                events.Add(eventName);
+        }
+
+        // Parse timeout_seconds (default 10)
+        var timeoutSeconds = 10;
+        if (hookElement.TryGetProperty("timeout_seconds", out var timeoutElement))
+        {
+            if (timeoutElement.ValueKind == JsonValueKind.Number)
+                timeoutSeconds = timeoutElement.GetInt32();
+        }
+
+        // Parse extra_config (optional)
+        ExtraConfigSpec? extraConfig = null;
+        if (hookElement.TryGetProperty("extra_config", out var extraElement) &&
+            extraElement.ValueKind == JsonValueKind.Object)
+        {
+            var parseResult = ParseExtraConfig(extraElement);
+            if (!parseResult.Success)
+                return (false, null, parseResult.Error);
+            extraConfig = parseResult.ExtraConfig;
+        }
+
+        // Validate using PluginValidator
+        var (isValid, error) = PluginValidator.ValidateHookInstallation(
+            format,
+            configPath,
+            events,
+            timeoutSeconds);
+
+        if (!isValid)
+            return (false, null, $"Hook installation validation failed: {error}");
+
+        var spec = new HookInstallationSpec(
+            format,
+            configPath,
+            events,
+            timeoutSeconds,
+            extraConfig);
+
+        return (true, spec, null);
+    }
+
+    private static (bool Success, ExtraConfigSpec? ExtraConfig, string? Error) ParseExtraConfig(
+        JsonElement extraElement)
+    {
+        // Parse file (required)
+        if (!extraElement.TryGetProperty("file", out var fileElement))
+            return (false, null, "Missing required 'extra_config.file'");
+
+        var filePath = fileElement.GetString()?.Trim();
+        if (string.IsNullOrWhiteSpace(filePath))
+            return (false, null, "'extra_config.file' cannot be empty");
+
+        // Parse key (required)
+        if (!extraElement.TryGetProperty("key", out var keyElement))
+            return (false, null, "Missing required 'extra_config.key'");
+
+        var key = keyElement.GetString()?.Trim();
+        if (string.IsNullOrWhiteSpace(key))
+            return (false, null, "'extra_config.key' cannot be empty");
+
+        // Parse value (required)
+        if (!extraElement.TryGetProperty("value", out var valueElement))
+            return (false, null, "Missing required 'extra_config.value'");
+
+        var value = valueElement.GetString()?.Trim();
+        if (string.IsNullOrWhiteSpace(value))
+            return (false, null, "'extra_config.value' cannot be empty");
+
+        // Parse section (optional)
+        string? section = null;
+        if (extraElement.TryGetProperty("section", out var sectionElement))
+        {
+            section = sectionElement.GetString()?.Trim();
+        }
+
+        var spec = new ExtraConfigSpec(filePath, section, key, value);
+        return (true, spec, null);
     }
 }
