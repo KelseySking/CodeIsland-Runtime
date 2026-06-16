@@ -28,27 +28,86 @@ public sealed class SourcePluginLoader
     }
 
     /// <summary>
+    /// Gets the bundled plugin directory path.
+    /// Bundled plugins are located relative to the Core assembly.
+    /// </summary>
+    public static string GetBundledPluginDirectory()
+    {
+        // Get the directory where Core assembly is located
+        var assemblyLocation = typeof(SourcePluginLoader).Assembly.Location;
+        var assemblyDir = Path.GetDirectoryName(assemblyLocation);
+
+        if (string.IsNullOrEmpty(assemblyDir))
+            return Path.Combine(AppContext.BaseDirectory, "bundled-plugins");
+
+        return Path.Combine(assemblyDir, "bundled-plugins");
+    }
+
+    /// <summary>
     /// Loads all valid plugins from the plugin directory.
     /// Invalid plugins are skipped with logging.
+    /// Bundled plugins are loaded first and have priority over user plugins.
     /// </summary>
     public IReadOnlyList<ICodeIslandSourceAdapter> LoadPlugins()
     {
         var adapters = new List<ICodeIslandSourceAdapter>();
         var loadedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // 1. Load bundled plugins first (highest priority)
+        LoadBundledPlugins(adapters, loadedKeys);
+
+        // 2. Load user plugins (can't override bundled)
+        LoadUserPlugins(adapters, loadedKeys);
+
+        return adapters;
+    }
+
+    private void LoadBundledPlugins(List<ICodeIslandSourceAdapter> adapters, HashSet<string> loadedKeys)
+    {
+        var bundledDir = GetBundledPluginDirectory();
+        if (!Directory.Exists(bundledDir))
+            return;
+
+        try
+        {
+            var bundledFiles = Directory.GetFiles(bundledDir, "*.json", SearchOption.TopDirectoryOnly);
+            foreach (var filePath in bundledFiles)
+            {
+                var result = TryLoadPluginFromFile(filePath, loadedKeys);
+
+                if (result.Success && result.Adapter != null)
+                {
+                    adapters.Add(result.Adapter);
+                    loadedKeys.Add(result.Adapter.SourceKey);
+                }
+                else if (result.ErrorMessage != null)
+                {
+                    var fileName = Path.GetFileName(filePath);
+                    _logError?.Invoke($"Bundled plugin '{fileName}': {result.ErrorMessage}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logError?.Invoke($"Failed to load bundled plugins: {ex.Message}");
+        }
+    }
+
+    private void LoadUserPlugins(List<ICodeIslandSourceAdapter> adapters, HashSet<string> loadedKeys)
+    {
         // Ensure directory exists
         try
         {
             if (!Directory.Exists(_pluginDirectory))
             {
                 Directory.CreateDirectory(_pluginDirectory);
-                return adapters; // Empty directory, no plugins
+                return; // Empty directory, no plugins
             }
         }
         catch (Exception ex)
         {
             _logError?.Invoke($"Failed to create plugin directory '{_pluginDirectory}': {ex.Message}");
-            return adapters;
+            return;
         }
 
         // Discover *.json files
@@ -60,7 +119,7 @@ public sealed class SourcePluginLoader
         catch (Exception ex)
         {
             _logError?.Invoke($"Failed to enumerate plugin files in '{_pluginDirectory}': {ex.Message}");
-            return adapters;
+            return;
         }
 
         // Load each file
@@ -88,8 +147,6 @@ public sealed class SourcePluginLoader
                 }
             }
         }
-
-        return adapters;
     }
 
     /// <summary>
