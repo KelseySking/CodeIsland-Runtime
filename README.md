@@ -41,6 +41,12 @@ dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token --port 3214
 
 Then connect a display client to `http://127.0.0.1:32145` with token `dev-token`.
 
+## Extensibility
+
+CodeIsland Runtime supports custom CLI sources through a plugin system. Drop JSON files into `%AppData%\CodeIsland\sources\` to register new sources without recompilation.
+
+See [Plugin Documentation](docs/source-plugins.en.md) ([中文](docs/source-plugins.md)) for details.
+
 ## API And Display Clients
 
 - [Documentation index](docs/README.md)

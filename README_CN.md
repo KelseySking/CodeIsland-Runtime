@@ -41,6 +41,12 @@ dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token --port 3214
 
 展示端连接 `http://127.0.0.1:32145`，token 使用 `dev-token`。
 
+## 可扩展性
+
+CodeIsland Runtime 支持通过插件系统扩展 CLI 源。将 JSON 文件放入 `%AppData%\CodeIsland\sources\` 目录，即可注册新的 CLI 源，无需重新编译。
+
+详见[插件文档](docs/source-plugins.md)（[English](docs/source-plugins.en.md)）。
+
 ## 接口和展示端开发
 
 - [中文文档索引](docs/README_CN.md)

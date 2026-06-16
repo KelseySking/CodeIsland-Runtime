@@ -9,9 +9,13 @@ public static class CodeIslandSourceAdapterRegistry
             "unknown",
             CodeIslandPermissionResponseStyle.ClaudeStyle);
 
-    private static readonly Dictionary<string, ICodeIslandSourceAdapter> Adapters = BuildAdapters();
+    // Separate built-in adapters for clarity and protection
+    private static readonly Dictionary<string, ICodeIslandSourceAdapter> BuiltInAdapters = BuildBuiltInAdapters();
 
-    public static IReadOnlyCollection<string> KnownSources => Adapters.Keys.ToArray();
+    // Lazy loading of all adapters (built-in + plugins)
+    private static readonly Lazy<Dictionary<string, ICodeIslandSourceAdapter>> AllAdapters = new(BuildAllAdapters);
+
+    public static IReadOnlyCollection<string> KnownSources => AllAdapters.Value.Keys.ToArray();
 
     public static bool IsKnownSource(string? source) =>
         TryGet(source, out _);
@@ -19,7 +23,7 @@ public static class CodeIslandSourceAdapterRegistry
     public static bool TryGet(string? source, out ICodeIslandSourceAdapter adapter)
     {
         if (!string.IsNullOrWhiteSpace(source) &&
-            Adapters.TryGetValue(source.Trim(), out adapter!))
+            AllAdapters.Value.TryGetValue(source.Trim(), out adapter!))
         {
             return true;
         }
@@ -31,7 +35,7 @@ public static class CodeIslandSourceAdapterRegistry
     public static ICodeIslandSourceAdapter Get(string? source) =>
         TryGet(source, out var adapter) ? adapter : UnknownAdapter;
 
-    private static Dictionary<string, ICodeIslandSourceAdapter> BuildAdapters()
+    private static Dictionary<string, ICodeIslandSourceAdapter> BuildBuiltInAdapters()
     {
         return new Dictionary<string, ICodeIslandSourceAdapter>(StringComparer.OrdinalIgnoreCase)
         {
@@ -95,6 +99,44 @@ public static class CodeIslandSourceAdapterRegistry
                     ["TaskComplete"] = "Stop"
                 })
         };
+    }
+
+    private static Dictionary<string, ICodeIslandSourceAdapter> BuildAllAdapters()
+    {
+        // Start with built-in adapters (protected from override)
+        var adapters = new Dictionary<string, ICodeIslandSourceAdapter>(
+            BuiltInAdapters,
+            StringComparer.OrdinalIgnoreCase);
+
+        // Load and merge plugins
+        try
+        {
+            var loader = new SourcePluginLoader(
+                logError: msg => Console.Error.WriteLine($"[SourcePlugin] Error: {msg}"),
+                logWarning: msg => Console.Error.WriteLine($"[SourcePlugin] Warning: {msg}"));
+
+            var plugins = loader.LoadPlugins();
+
+            foreach (var plugin in plugins)
+            {
+                // Skip if conflicts with built-in (protection)
+                if (!adapters.ContainsKey(plugin.SourceKey))
+                {
+                    adapters[plugin.SourceKey] = plugin;
+                }
+                else
+                {
+                    Console.Error.WriteLine($"[SourcePlugin] Warning: Plugin '{plugin.SourceKey}' conflicts with built-in source (skipped)");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Isolation: plugin loading errors don't break registry
+            Console.Error.WriteLine($"[SourcePlugin] Failed to load plugins: {ex.Message}");
+        }
+
+        return adapters;
     }
 
     private sealed class BuiltInSourceAdapter : ICodeIslandSourceAdapter
