@@ -43,9 +43,62 @@ Then connect a display client to `http://127.0.0.1:32145` with token `dev-token`
 
 ## Extensibility
 
-CodeIsland Runtime supports custom CLI sources through a plugin system. Drop JSON files into `%AppData%\CodeIsland\sources\` to register new sources without recompilation.
+CodeIsland Runtime supports custom CLI sources through a **plugin system**. This allows you to add support for new AI CLI tools without recompiling the Runtime.
 
-See [Plugin Documentation](docs/source-plugins.en.md) ([中文](docs/source-plugins.md)) for details.
+### Plugin System Features
+
+- **Automatic CLI Detection**: Plugins can define process names, environment variables, and path patterns to automatically detect which CLI is running
+- **Hook Installation**: Plugins specify how to install hooks into the CLI's configuration files
+- **Bundled Plugins**: Runtime ships with built-in support for Claude Code, Codex, and more
+- **User Plugins**: Drop JSON files into `%AppData%\CodeIsland\sources\` to register custom CLIs
+
+### Quick Start
+
+Create a plugin file (e.g., `my-cli.json`) in `%AppData%\CodeIsland\sources\`:
+
+```json
+{
+  "schema_version": "2.0",
+  "source": {
+    "key": "my-cli",
+    "display_name": "My CLI",
+    "icon_name": "terminal",
+    "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["my-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
+  }
+}
+```
+
+Then use ConfigInstaller to install hooks:
+
+```csharp
+using CodeIsland.Core.Services;
+
+bool success = ConfigInstaller.InstallPlugin("my-cli");
+```
+
+### Documentation
+
+- **English**: [Plugin System Guide](docs/source-plugins.en.md) | [Plugin Schema Reference](docs/plugin-schema.en.md)
+- **中文**: [插件系统指南](docs/source-plugins.md) | [插件 Schema 参考](docs/plugin-schema.md)
+
+### Bundled Plugins
+
+Runtime ships with these built-in CLI plugins:
+
+- **Claude Code** (`claude.json`) - 12 events, claude-matcher format
+- **Codex CLI** (`codex.json`) - 7 events, nested format with config.toml support
+
+More bundled plugins coming soon.
 
 ## API And Display Clients
 

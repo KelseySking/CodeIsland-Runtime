@@ -43,9 +43,62 @@ dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token --port 3214
 
 ## 可扩展性
 
-CodeIsland Runtime 支持通过插件系统扩展 CLI 源。将 JSON 文件放入 `%AppData%\CodeIsland\sources\` 目录，即可注册新的 CLI 源，无需重新编译。
+CodeIsland Runtime 支持通过**插件系统**扩展 CLI 源。这使你可以添加新的 AI CLI 工具支持，无需重新编译 Runtime。
 
-详见[插件文档](docs/source-plugins.md)（[English](docs/source-plugins.en.md)）。
+### 插件系统功能
+
+- **自动 CLI 检测**：插件可以定义进程名、环境变量、路径模式来自动检测正在运行的 CLI
+- **Hook 安装**：插件指定如何将 hook 安装到 CLI 的配置文件中
+- **内置插件**：Runtime 自带 Claude Code、Codex 等内置支持
+- **用户插件**：将 JSON 文件放入 `%AppData%\CodeIsland\sources\` 即可注册自定义 CLI
+
+### 快速开始
+
+在 `%AppData%\CodeIsland\sources\` 中创建插件文件（例如 `my-cli.json`）：
+
+```json
+{
+  "schema_version": "2.0",
+  "source": {
+    "key": "my-cli",
+    "display_name": "My CLI",
+    "icon_name": "terminal",
+    "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["my-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
+  }
+}
+```
+
+然后使用 ConfigInstaller 安装 hook：
+
+```csharp
+using CodeIsland.Core.Services;
+
+bool success = ConfigInstaller.InstallPlugin("my-cli");
+```
+
+### 文档
+
+- **中文**：[插件系统指南](docs/source-plugins.md) | [插件 Schema 参考](docs/plugin-schema.md)
+- **English**: [Plugin System Guide](docs/source-plugins.en.md) | [Plugin Schema Reference](docs/plugin-schema.en.md)
+
+### 内置插件
+
+Runtime 自带以下内置 CLI 插件：
+
+- **Claude Code** (`claude.json`) - 12 个事件，claude-matcher 格式
+- **Codex CLI** (`codex.json`) - 7 个事件，nested 格式，支持 config.toml
+
+更多内置插件即将推出。
 
 ## 接口和展示端开发
 
