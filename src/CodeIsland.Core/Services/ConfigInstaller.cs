@@ -1186,4 +1186,108 @@ public static class ConfigInstaller
         if (dir != null) Directory.CreateDirectory(dir);
         File.WriteAllText(path, json.ToJsonString(JsonOptions));
     }
+
+    // ==================== Plugin Support ====================
+
+    /// <summary>
+    /// 安装插件定义的 hook 配置
+    /// </summary>
+    /// <param name="sourceKey">插件 source key</param>
+    /// <returns>是否安装成功</returns>
+    public static bool InstallPlugin(string sourceKey)
+    {
+        try
+        {
+            // Load plugin to get hook installation spec
+            var loader = new Sources.SourcePluginLoader();
+            var plugin = loader.LoadPlugins().FirstOrDefault(p =>
+                string.Equals(p.SourceKey, sourceKey, StringComparison.OrdinalIgnoreCase));
+
+            if (plugin is not Sources.IPluginSourceAdapter pluginAdapter)
+                return false;
+
+            var hookSpec = pluginAdapter.GetHookInstallationSpec();
+            if (hookSpec == null)
+                return false; // Plugin doesn't define hook installation
+
+            // Ensure runtime assets are ready
+            if (!RepairRuntimeAssets())
+                return false;
+
+            // Create strategy and install
+            var strategy = Sources.HookStrategyFactory.Create(hookSpec.Format);
+            if (strategy == null)
+                return false;
+
+            return strategy.Install(sourceKey, hookSpec);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 卸载插件定义的 hook 配置
+    /// </summary>
+    /// <param name="sourceKey">插件 source key</param>
+    /// <returns>是否卸载成功</returns>
+    public static bool UninstallPlugin(string sourceKey)
+    {
+        try
+        {
+            var loader = new Sources.SourcePluginLoader();
+            var plugin = loader.LoadPlugins().FirstOrDefault(p =>
+                string.Equals(p.SourceKey, sourceKey, StringComparison.OrdinalIgnoreCase));
+
+            if (plugin is not Sources.IPluginSourceAdapter pluginAdapter)
+                return false;
+
+            var hookSpec = pluginAdapter.GetHookInstallationSpec();
+            if (hookSpec == null)
+                return true; // Nothing to uninstall
+
+            var strategy = Sources.HookStrategyFactory.Create(hookSpec.Format);
+            if (strategy == null)
+                return false;
+
+            return strategy.Uninstall(sourceKey, hookSpec);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 检查插件 hook 是否已安装
+    /// </summary>
+    /// <param name="sourceKey">插件 source key</param>
+    /// <returns>是否已安装</returns>
+    public static bool IsPluginInstalled(string sourceKey)
+    {
+        try
+        {
+            var loader = new Sources.SourcePluginLoader();
+            var plugin = loader.LoadPlugins().FirstOrDefault(p =>
+                string.Equals(p.SourceKey, sourceKey, StringComparison.OrdinalIgnoreCase));
+
+            if (plugin is not Sources.IPluginSourceAdapter pluginAdapter)
+                return false;
+
+            var hookSpec = pluginAdapter.GetHookInstallationSpec();
+            if (hookSpec == null)
+                return false;
+
+            var strategy = Sources.HookStrategyFactory.Create(hookSpec.Format);
+            if (strategy == null)
+                return false;
+
+            return strategy.IsInstalled(sourceKey, hookSpec);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
