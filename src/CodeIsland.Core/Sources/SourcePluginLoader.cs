@@ -133,7 +133,9 @@ public sealed class SourcePluginLoader
                 metadata.DisplayName,
                 metadata.IconName,
                 metadata.PermissionResponseStyle,
-                metadata.EventMappings);
+                metadata.EventMappings,
+                metadata.Detection,
+                metadata.HookInstallation);
 
             return new PluginLoadResult(true, adapter, null, null);
         }

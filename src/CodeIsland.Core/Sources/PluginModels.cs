@@ -8,7 +8,9 @@ internal sealed record PluginMetadata(
     string DisplayName,
     string IconName,
     CodeIslandPermissionResponseStyle PermissionResponseStyle,
-    IReadOnlyDictionary<string, string> EventMappings);
+    IReadOnlyDictionary<string, string> EventMappings,
+    DetectionRule? Detection,
+    HookInstallationSpec? HookInstallation);
 
 /// <summary>
 /// Result of attempting to load a plugin from a file.

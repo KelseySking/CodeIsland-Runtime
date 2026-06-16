@@ -1,19 +1,23 @@
 namespace CodeIsland.Core.Sources;
 
 /// <summary>
-/// Plugin-defined source adapter that implements ICodeIslandSourceAdapter.
+/// Plugin-defined source adapter that implements IPluginSourceAdapter.
 /// Loaded from JSON files in the plugin directory at runtime.
 /// </summary>
-internal sealed class PluginSourceAdapter : ICodeIslandSourceAdapter
+internal sealed class PluginSourceAdapter : IPluginSourceAdapter
 {
     private readonly IReadOnlyDictionary<string, string> _eventAliases;
+    private readonly DetectionRule? _detectionRule;
+    private readonly HookInstallationSpec? _hookInstallationSpec;
 
     public PluginSourceAdapter(
         string sourceKey,
         string displayName,
         string iconName,
         CodeIslandPermissionResponseStyle permissionResponseStyle,
-        IReadOnlyDictionary<string, string>? eventAliases = null)
+        IReadOnlyDictionary<string, string>? eventAliases = null,
+        DetectionRule? detectionRule = null,
+        HookInstallationSpec? hookInstallationSpec = null)
     {
         if (string.IsNullOrWhiteSpace(sourceKey))
             throw new ArgumentException("Source key cannot be null or whitespace.", nameof(sourceKey));
@@ -27,6 +31,8 @@ internal sealed class PluginSourceAdapter : ICodeIslandSourceAdapter
         IconName = iconName;
         PermissionResponseStyle = permissionResponseStyle;
         _eventAliases = eventAliases ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _detectionRule = detectionRule;
+        _hookInstallationSpec = hookInstallationSpec;
     }
 
     public string SourceKey { get; }
@@ -45,4 +51,8 @@ internal sealed class PluginSourceAdapter : ICodeIslandSourceAdapter
         normalizedEventName = string.Empty;
         return false;
     }
+
+    public DetectionRule? GetDetectionRule() => _detectionRule;
+
+    public HookInstallationSpec? GetHookInstallationSpec() => _hookInstallationSpec;
 }

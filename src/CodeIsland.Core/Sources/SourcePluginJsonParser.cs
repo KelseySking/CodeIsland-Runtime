@@ -147,7 +147,9 @@ internal static class SourcePluginJsonParser
                 displayName,
                 iconName,
                 permissionStyle,
-                eventMappings);
+                eventMappings,
+                Detection: null,  // TODO: Parse detection section in Phase 2A
+                HookInstallation: null);  // TODO: Parse hook_installation section in Phase 2A
 
             return (true, metadata, null, null);
         }
