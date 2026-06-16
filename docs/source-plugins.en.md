@@ -1,261 +1,355 @@
 # CLI Source Plugin System
 
-CodeIsland Runtime supports extending CLI sources through JSON plugin files without recompilation.
+CodeIsland Runtime supports extending CLI sources through JSON plugin files without recompilation. The plugin system enables automatic CLI detection and hook installation.
+
+## Overview
+
+The plugin system provides three main capabilities:
+
+1. **Source Definition**: Define CLI identity and display properties
+2. **Automatic Detection**: Automatically detect which CLI is running based on process names, environment variables, and paths
+3. **Hook Installation**: Automatically install hooks into the CLI's configuration files
 
 ## Quick Start
 
-### 1. Create Plugin File
+### Basic Plugin (Schema 2.0)
 
 Create a JSON file (e.g., `my-cli.json`) in `%AppData%\CodeIsland\sources\`:
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "source": {
     "key": "my-cli",
-    "display_name": "My CLI",
+    "display_name": "My AI CLI",
     "icon_name": "terminal",
     "permission_response_style": "claude-style"
   },
-  "event_mappings": {
-    "beforeAction": "PreToolUse",
-    "afterAction": "PostToolUse"
+  "detection": {
+    "process_names": ["my-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
   }
 }
 ```
 
-### 2. Configure CLI Tool
+### Install Hooks
 
-Configure your CLI tool to call CodeIsland Bridge with `--source` parameter:
+Use `ConfigInstaller` to install hooks automatically:
 
-```bash
-CodeIsland.Bridge.exe --source my-cli
+```csharp
+using CodeIsland.Core.Services;
+
+// Install hooks for your CLI
+bool success = ConfigInstaller.InstallPlugin("my-cli");
+
+// Check if already installed
+bool installed = ConfigInstaller.IsPluginInstalled("my-cli");
+
+// Uninstall hooks
+bool removed = ConfigInstaller.UninstallPlugin("my-cli");
 ```
 
-### 3. Start Runtime
+The `InstallPlugin` method will:
+1. Read the plugin definition
+2. Expand paths (`~/`, environment variables)
+3. Create the configuration file
+4. Merge CodeIsland hook entries
+5. Preserve existing user entries
 
-Start CodeIsland Runtime, and plugins will load automatically. Your CLI source will appear in `/api/sources` endpoint.
+### Start Runtime
+
+Start CodeIsland Runtime, and plugins will load automatically:
+
+```powershell
+dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token
+```
+
+Your CLI source will appear in the `/api/sources` endpoint and can be automatically detected when running.
 
 ---
 
-## Plugin Format Reference
+## Features
 
-### Required Fields
+### 1. Automatic CLI Detection
 
-#### `schema_version` (string)
-Plugin schema version. Must be `"1.0"` currently.
+Plugins can define detection rules to automatically identify which CLI is running:
 
-#### `source` (object)
-Source metadata:
-
-- **`key`** (string, required)  
-  Unique identifier, 2-64 characters, lowercase alphanumeric with hyphens, must start and end with alphanumeric.
-  
-  Examples: `"my-cli"`, `"custom-agent-v2"`
-  
-  ⚠️ **Cannot conflict with built-in sources** (claude, codex, cursor, etc.)
-
-- **`display_name`** (string, required)  
-  Display name, 1-100 characters.
-  
-  Examples: `"My Custom CLI"`, `"Enterprise AI Assistant"`
-
-- **`icon_name`** (string, required)  
-  Icon identifier, 1-64 characters.
-  
-  Examples: `"terminal"`, `"robot"`, `"mycli"`
-
-- **`permission_response_style`** (enum, required)  
-  Permission response format. Options:
-  - `"claude-style"`: Claude Code style (recommended)
-  - `"codex"`: Codex CLI style
-
-### Optional Fields
-
-#### `event_mappings` (object)
-Map CLI-specific event names to standard event names.
-
-**Standard Event Names**:
-- `PreToolUse` - Before tool execution
-- `PostToolUse` - After tool execution
-- `UserPromptSubmit` - User submits prompt
-- `SessionStart` - Session starts
-- `SessionEnd` - Session ends
-- `Stop` - Stop
-- `SubagentStart` - Subagent starts
-- `SubagentStop` - Subagent stops
-- `Notification` - Notification
-- `PermissionRequest` - Permission request
-- `PostToolUseFailure` - Tool execution failed
-- `PreCompact` - Before compaction
-
-**Example**:
 ```json
-"event_mappings": {
-  "beforeToolExec": "PreToolUse",
-  "afterToolExec": "PostToolUse",
-  "sessionInit": "SessionStart",
-  "sessionEnd": "Stop"
+{
+  "detection": {
+    "process_names": ["my-cli", "mycli-agent"],
+    "env_var_hints": {
+      "MY_CLI_HOME": "*",
+      "MY_CLI_VERSION": "2.*"
+    },
+    "path_patterns": ["*my-cli*"],
+    "priority": 150
+  }
 }
 ```
 
----
+**How it works**:
+- Bridge collects process ancestry (parent, grandparent, etc.)
+- Runtime matches against detection rules (highest priority first)
+- First matching plugin wins
+- No need for manual `--source` parameter
 
-## Complete Examples
+**Priority levels**:
+- **1000+**: Bundled plugins (built-in CLIs like Claude, Codex)
+- **500-999**: High priority user plugins
+- **100-499**: Normal priority user plugins
+- **1-99**: Low priority user plugins
 
-### Minimal Plugin
+### 2. Hook Installation
+
+Plugins specify how to install hooks into the CLI's configuration:
+
 ```json
 {
-  "schema_version": "1.0",
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse", "SessionStart"],
+    "timeout_seconds": 10
+  }
+}
+```
+
+**Supported formats**:
+- **flat**: Array format `[{event, command, timeout}]` (Cursor, Trae)
+- **nested**: Nested format `{hooks: {Event: [{command, timeout}]}}` (Gemini, Codex)
+- **claude-matcher**: Claude format with matcher support
+
+### 3. Extra Configuration
+
+Some CLIs require additional configuration beyond hooks:
+
+```json
+{
+  "hook_installation": {
+    "format": "nested",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10,
+    "extra_config": {
+      "file": "~/.my-cli/config.toml",
+      "section": "[features]",
+      "key": "hooks",
+      "value": "true"
+    }
+  }
+}
+```
+
+This ensures the CLI's hook system is enabled (e.g., Codex requires `hooks = true` in config.toml).
+
+---
+
+## Plugin Types
+
+### Bundled Plugins
+
+Shipped with Runtime in `bundled-plugins/`:
+- **Claude Code**: 12 events, claude-matcher format
+- **Codex CLI**: 7 events, nested format with config.toml
+- **More coming soon**
+
+Properties:
+- Loaded first
+- Highest priority (cannot be overridden)
+- Guaranteed stable behavior
+
+### User Plugins
+
+Created by users in `%AppData%\CodeIsland\sources\`:
+- Custom CLI support
+- Lower priority than bundled plugins
+- Can define any source key (except built-in ones)
+
+---
+
+## Use Cases
+
+### 1. Add Support for New CLI
+
+Support a new AI CLI that Runtime doesn't know about:
+
+```json
+{
+  "schema_version": "2.0",
   "source": {
-    "key": "simple-cli",
-    "display_name": "Simple CLI",
-    "icon_name": "terminal",
+    "key": "new-cli",
+    "display_name": "New AI CLI",
+    "icon_name": "ai",
     "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["new-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.new-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
   }
 }
 ```
 
-### Full Plugin (with Event Mappings)
+### 2. Customize Detection Priority
+
+Override detection priority for your organization:
+
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "source": {
-    "key": "advanced-agent",
-    "display_name": "Advanced AI Agent",
-    "icon_name": "robot",
+    "key": "enterprise-cli",
+    "display_name": "Enterprise AI",
+    "icon_name": "enterprise",
+    "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["enterprise-ai"],
+    "env_var_hints": {
+      "ENTERPRISE_AI_TOKEN": "*"
+    },
+    "priority": 800
+  }
+}
+```
+
+### 3. CLI with Custom Hook Format
+
+Support CLI with unique hook configuration:
+
+```json
+{
+  "schema_version": "2.0",
+  "source": {
+    "key": "custom-cli",
+    "display_name": "Custom CLI",
+    "icon_name": "custom",
     "permission_response_style": "codex"
   },
-  "event_mappings": {
-    "before_tool": "PreToolUse",
-    "after_tool": "PostToolUse",
-    "session_start": "SessionStart",
-    "session_stop": "Stop",
-    "agent_spawn": "SubagentStart",
-    "agent_exit": "SubagentStop"
+  "hook_installation": {
+    "format": "nested",
+    "config_path": "${CUSTOM_CLI_HOME}/hooks.json",
+    "events": ["SessionStart", "SessionEnd", "PreToolUse"],
+    "timeout_seconds": 15,
+    "extra_config": {
+      "file": "${CUSTOM_CLI_HOME}/config.yaml",
+      "key": "enable_hooks",
+      "value": "true"
+    }
   }
 }
 ```
 
 ---
 
-## Validation Rules
+## Schema Versions
 
-### `source.key` Validation
-- Length: 2-64 characters
-- Pattern: `^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$`
-- ✅ Valid: `my-cli`, `agent-v2`, `tool123`
-- ❌ Invalid: `My-CLI` (uppercase), `-cli` (leading hyphen), `a` (too short)
+### Schema 2.0 (Current)
 
-### Conflict Detection
-Plugins cannot override built-in sources. If `source.key` conflicts with a built-in, the plugin is skipped with a warning.
+**Features**:
+- ✅ Automatic CLI detection
+- ✅ Hook installation support
+- ✅ Extra config support
+- ✅ Path expansion
+- ✅ Priority-based matching
 
-**Built-in Sources** (partial list):
-- claude, codex, cursor, gemini, trae, copilot, cline, qoder, kimi, pi, kiro, etc.
+**Required fields**:
+- `schema_version`: `"2.0"`
+- `source`: CLI identity
 
-### Event Mapping Validation
-Mapping values must be valid standard event names (see list above). Invalid mappings cause plugin load failure.
+**Optional fields**:
+- `detection`: Detection rules
+- `hook_installation`: Hook configuration
 
----
+### Schema 1.0 (Legacy)
 
-## Troubleshooting
+**Features**:
+- ✅ Source definition
+- ✅ Event name mapping
+- ❌ No automatic detection
+- ❌ No hook installation
 
-### Plugin Not in Source List
+**Limitations**:
+- Must use `--source` parameter manually
+- Must configure hooks manually
+- No automatic CLI detection
 
-**Reason 1: Invalid JSON**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': Invalid JSON: ...
-```
-**Solution**: Check syntax with a JSON validator.
-
-**Reason 2: Missing Required Field**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': Missing required 'source.key'
-```
-**Solution**: Ensure all required fields are present.
-
-**Reason 3: Invalid `source.key` Format**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': 'source.key' must match pattern: ...
-```
-**Solution**: Use lowercase letters, digits, hyphens, 2-64 chars.
-
-**Reason 4: Built-in Conflict**
-```
-[SourcePlugin] Warning: Plugin 'claude' conflicts with built-in source (skipped)
-```
-**Solution**: Use a different `source.key`.
-
-### View Logs
-
-Runtime outputs plugin loading errors to stderr.
-
-When running Runtime in console, errors appear as:
-```
-[SourcePlugin] Error: Plugin 'bad-plugin.json': Invalid JSON: ...
-```
+**Recommendation**: Upgrade to Schema 2.0 for full functionality.
 
 ---
 
-## Limitations (Phase 1)
+## Advanced Topics
 
-### ✅ Supported Features
-- Define source metadata (name, icon, key)
-- Event name mapping
-- Select permission response format
+### Path Expansion
 
-### ❌ Not Yet Supported
-- **Automatic Hook Installation**: Plugins don't configure CLI hooks automatically; manual setup required
-- **Hot Reload**: Plugins loaded at startup; restart required after changes
-- **Plugin Marketplace**: No discovery or download mechanism
-- **Digital Signatures**: No verification or trust system
-- **Per-Project Plugins**: Only global `%AppData%` location supported
+Paths support multiple expansion formats:
 
-### Future Phases
-- Phase 2: Template-based automatic hook installation
-- Phase 3: Hot reload and plugin management API
-- Phase 4: Plugin marketplace and discovery
+```json
+{
+  "config_path": "~/.my-cli/hooks.json"          // Tilde expansion
+  "config_path": "${MY_CLI_HOME}/hooks.json"     // Environment variable
+  "config_path": "%APPDATA%\\my-cli\\hooks.json" // Windows env var
+}
+```
+
+### Config Merging
+
+Hook installation preserves existing user entries:
+
+**Before installation**:
+```json
+[
+  {"event": "CustomEvent", "command": "my-script.sh"}
+]
+```
+
+**After installation**:
+```json
+[
+  {"event": "CustomEvent", "command": "my-script.sh"},
+  {"event": "PreToolUse", "command": "CodeIsland.Bridge --source my-cli", "timeout": 10}
+]
+```
+
+### Security
+
+All plugins are validated for security:
+- Path traversal prevention
+- Regex catastrophic backtracking checks
+- Resource limits (events, patterns, timeouts)
+- Environment variable expansion safety
 
 ---
 
-## Plugin File Location
+## Documentation
 
-**Windows**:  
-```
-%AppData%\CodeIsland\sources\
-C:\Users\<username>\AppData\Roaming\CodeIsland\sources\
-```
-
-**Linux/macOS** (future):  
-```
-~/.config/CodeIsland/sources/
-```
-
-Runtime auto-creates this directory on first registry access.
+- **[Plugin Schema Reference](plugin-schema.en.md)** ([中文](plugin-schema.md)) - Complete field reference
+- **[API Reference](api-reference.en.md)** - REST/WebSocket API documentation
+- **[Integration Guide](integration-guide.en.md)** - Integration patterns for display clients
 
 ---
 
-## Technical Details
+## Examples
 
-### Loading Timing
-Plugins are lazy-loaded on first access to `CodeIslandSourceAdapterRegistry` (typically when first hook event arrives).
+Complete plugin examples are available in:
+- `bundled-plugins/claude.json` - Claude Code (claude-matcher format)
+- `bundled-plugins/codex.json` - Codex CLI (nested format with extra config)
 
-### Error Isolation
-Individual plugin loading errors don't affect other plugins or Runtime stability. Invalid plugins are skipped and logged.
-
-### Built-in Protection
-Plugins cannot override built-in sources. If `source.key` conflicts, built-in takes precedence and plugin is skipped.
-
-### Priority
-Loading order:
-1. Built-in sources (highest priority)
-2. Plugins (alphabetical by filename)
-3. If multiple plugins use same key, first loaded wins
+See [Plugin Schema Reference](plugin-schema.en.md) for more examples.
 
 ---
 
-## References
-
-- [API Reference](api-reference.en.md)
-- [Integration Guide](integration-guide.en.md)
-- [Runtime/Display Contract](runtime-display-contract.md)
+**Last Updated**: 2026-06-16  
+**Current Schema**: 2.0

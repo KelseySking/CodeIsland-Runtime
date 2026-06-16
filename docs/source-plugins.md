@@ -1,261 +1,355 @@
 # CLI 源插件系统
 
-CodeIsland Runtime 支持通过 JSON 插件文件扩展支持的 CLI 源，无需重新编译。
+CodeIsland Runtime 支持通过 JSON 插件文件扩展 CLI 源，无需重新编译。插件系统支持自动 CLI 检测和 hook 安装。
+
+## 概述
+
+插件系统提供三大核心能力：
+
+1. **源定义**：定义 CLI 标识和显示属性
+2. **自动检测**：基于进程名、环境变量和路径自动检测正在运行的 CLI
+3. **Hook 安装**：自动将 hook 安装到 CLI 的配置文件中
 
 ## 快速开始
 
-### 1. 创建插件文件
+### 基础插件（Schema 2.0）
 
-在 `%AppData%\CodeIsland\sources\` 目录下创建 JSON 文件（例如 `my-cli.json`）：
+在 `%AppData%\CodeIsland\sources\` 中创建 JSON 文件（例如 `my-cli.json`）：
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "source": {
     "key": "my-cli",
-    "display_name": "My CLI",
+    "display_name": "My AI CLI",
     "icon_name": "terminal",
     "permission_response_style": "claude-style"
   },
-  "event_mappings": {
-    "beforeAction": "PreToolUse",
-    "afterAction": "PostToolUse"
+  "detection": {
+    "process_names": ["my-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
   }
 }
 ```
 
-### 2. 配置 CLI 工具
+### 安装 Hook
 
-配置你的 CLI 工具调用 CodeIsland Bridge 时指定 `--source` 参数：
+使用 `ConfigInstaller` 自动安装 hook：
 
-```bash
-CodeIsland.Bridge.exe --source my-cli
+```csharp
+using CodeIsland.Core.Services;
+
+// 为你的 CLI 安装 hook
+bool success = ConfigInstaller.InstallPlugin("my-cli");
+
+// 检查是否已安装
+bool installed = ConfigInstaller.IsPluginInstalled("my-cli");
+
+// 卸载 hook
+bool removed = ConfigInstaller.UninstallPlugin("my-cli");
 ```
 
-### 3. 启动 Runtime
+`InstallPlugin` 方法会：
+1. 读取插件定义
+2. 展开路径（`~/`、环境变量）
+3. 创建配置文件
+4. 合并 CodeIsland hook 条目
+5. 保留现有的用户条目
 
-启动 CodeIsland Runtime，插件将自动加载。你的 CLI 源将出现在 `/api/sources` 端点中。
+### 启动 Runtime
+
+启动 CodeIsland Runtime，插件会自动加载：
+
+```powershell
+dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token
+```
+
+你的 CLI 源会出现在 `/api/sources` 端点中，并可在运行时自动检测。
 
 ---
 
-## 插件格式参考
+## 功能特性
 
-### 必需字段
+### 1. 自动 CLI 检测
 
-#### `schema_version` (string)
-插件模式版本。当前必须为 `"1.0"`。
+插件可以定义检测规则来自动识别正在运行的 CLI：
 
-#### `source` (object)
-源的元数据：
-
-- **`key`** (string, 必需)  
-  唯一标识符，2-64 字符，只能包含小写字母、数字和连字符，必须以字母或数字开头和结尾。
-  
-  示例：`"my-cli"`, `"custom-agent-v2"`
-  
-  ⚠️ **不能与内置源冲突**（claude, codex, cursor 等）
-
-- **`display_name`** (string, 必需)  
-  显示名称，1-100 字符。
-  
-  示例：`"My Custom CLI"`, `"企业 AI 助手"`
-
-- **`icon_name`** (string, 必需)  
-  图标标识符，1-64 字符。
-  
-  示例：`"terminal"`, `"robot"`, `"mycli"`
-
-- **`permission_response_style`** (enum, 必需)  
-  权限响应格式。可选值：
-  - `"claude-style"`: Claude Code 风格（推荐）
-  - `"codex"`: Codex CLI 风格
-
-### 可选字段
-
-#### `event_mappings` (object)
-将 CLI 特定的事件名称映射到标准事件名称。
-
-**标准事件名称**：
-- `PreToolUse` - 工具执行前
-- `PostToolUse` - 工具执行后
-- `UserPromptSubmit` - 用户提交提示词
-- `SessionStart` - 会话开始
-- `SessionEnd` - 会话结束
-- `Stop` - 停止
-- `SubagentStart` - 子代理启动
-- `SubagentStop` - 子代理停止
-- `Notification` - 通知
-- `PermissionRequest` - 权限请求
-- `PostToolUseFailure` - 工具执行失败
-- `PreCompact` - 压缩前
-
-**示例**：
 ```json
-"event_mappings": {
-  "beforeToolExec": "PreToolUse",
-  "afterToolExec": "PostToolUse",
-  "sessionInit": "SessionStart",
-  "sessionEnd": "Stop"
+{
+  "detection": {
+    "process_names": ["my-cli", "mycli-agent"],
+    "env_var_hints": {
+      "MY_CLI_HOME": "*",
+      "MY_CLI_VERSION": "2.*"
+    },
+    "path_patterns": ["*my-cli*"],
+    "priority": 150
+  }
 }
 ```
 
----
+**工作原理**：
+- Bridge 收集进程族谱（父进程、祖父进程等）
+- Runtime 按检测规则匹配（最高优先级优先）
+- 第一个匹配的插件获胜
+- 无需手动 `--source` 参数
 
-## 完整示例
+**优先级级别**：
+- **1000+**：内置插件（Claude、Codex 等内置 CLI）
+- **500-999**：高优先级用户插件
+- **100-499**：普通优先级用户插件
+- **1-99**：低优先级用户插件
 
-### 最小插件
+### 2. Hook 安装
+
+插件指定如何将 hook 安装到 CLI 的配置中：
+
 ```json
 {
-  "schema_version": "1.0",
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse", "SessionStart"],
+    "timeout_seconds": 10
+  }
+}
+```
+
+**支持的格式**：
+- **flat**：数组格式 `[{event, command, timeout}]`（Cursor、Trae）
+- **nested**：嵌套格式 `{hooks: {Event: [{command, timeout}]}}`（Gemini、Codex）
+- **claude-matcher**：支持 matcher 的 Claude 格式
+
+### 3. 额外配置
+
+某些 CLI 除了 hook 外还需要额外配置：
+
+```json
+{
+  "hook_installation": {
+    "format": "nested",
+    "config_path": "~/.my-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10,
+    "extra_config": {
+      "file": "~/.my-cli/config.toml",
+      "section": "[features]",
+      "key": "hooks",
+      "value": "true"
+    }
+  }
+}
+```
+
+这确保 CLI 的 hook 系统已启用（例如 Codex 需要 config.toml 中的 `hooks = true`）。
+
+---
+
+## 插件类型
+
+### 内置插件
+
+Runtime 自带的插件（位于 `bundled-plugins/`）：
+- **Claude Code**：12 个事件，claude-matcher 格式
+- **Codex CLI**：7 个事件，nested 格式，支持 config.toml
+- **更多即将推出**
+
+特性：
+- 首先加载
+- 最高优先级（用户无法覆盖）
+- 保证稳定行为
+
+### 用户插件
+
+用户创建的插件（位于 `%AppData%\CodeIsland\sources\`）：
+- 自定义 CLI 支持
+- 优先级低于内置插件
+- 可以定义任何源键（除了内置的）
+
+---
+
+## 使用场景
+
+### 1. 添加新 CLI 支持
+
+支持 Runtime 尚未内置的新 AI CLI：
+
+```json
+{
+  "schema_version": "2.0",
   "source": {
-    "key": "simple-cli",
-    "display_name": "Simple CLI",
-    "icon_name": "terminal",
+    "key": "new-cli",
+    "display_name": "New AI CLI",
+    "icon_name": "ai",
     "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["new-cli"],
+    "priority": 100
+  },
+  "hook_installation": {
+    "format": "flat",
+    "config_path": "~/.new-cli/hooks.json",
+    "events": ["PreToolUse", "PostToolUse"],
+    "timeout_seconds": 10
   }
 }
 ```
 
-### 完整插件（带事件映射）
+### 2. 自定义检测优先级
+
+为你的组织覆盖检测优先级：
+
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "source": {
-    "key": "advanced-agent",
-    "display_name": "Advanced AI Agent",
-    "icon_name": "robot",
+    "key": "enterprise-cli",
+    "display_name": "Enterprise AI",
+    "icon_name": "enterprise",
+    "permission_response_style": "claude-style"
+  },
+  "detection": {
+    "process_names": ["enterprise-ai"],
+    "env_var_hints": {
+      "ENTERPRISE_AI_TOKEN": "*"
+    },
+    "priority": 800
+  }
+}
+```
+
+### 3. 自定义 Hook 格式的 CLI
+
+支持具有独特 hook 配置的 CLI：
+
+```json
+{
+  "schema_version": "2.0",
+  "source": {
+    "key": "custom-cli",
+    "display_name": "Custom CLI",
+    "icon_name": "custom",
     "permission_response_style": "codex"
   },
-  "event_mappings": {
-    "before_tool": "PreToolUse",
-    "after_tool": "PostToolUse",
-    "session_start": "SessionStart",
-    "session_stop": "Stop",
-    "agent_spawn": "SubagentStart",
-    "agent_exit": "SubagentStop"
+  "hook_installation": {
+    "format": "nested",
+    "config_path": "${CUSTOM_CLI_HOME}/hooks.json",
+    "events": ["SessionStart", "SessionEnd", "PreToolUse"],
+    "timeout_seconds": 15,
+    "extra_config": {
+      "file": "${CUSTOM_CLI_HOME}/config.yaml",
+      "key": "enable_hooks",
+      "value": "true"
+    }
   }
 }
 ```
 
 ---
 
-## 验证规则
+## Schema 版本
 
-### `source.key` 验证
-- 长度：2-64 字符
-- 格式：`^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$`
-- ✅ 有效：`my-cli`, `agent-v2`, `tool123`
-- ❌ 无效：`My-CLI`（大写）, `-cli`（开头连字符）, `a`（太短）
+### Schema 2.0（当前版本）
 
-### 冲突检测
-插件不能覆盖内置源。如果 `source.key` 与内置源冲突，插件将被跳过并记录警告。
+**功能**：
+- ✅ 自动 CLI 检测
+- ✅ Hook 安装支持
+- ✅ 额外配置支持
+- ✅ 路径展开
+- ✅ 基于优先级的匹配
 
-**内置源列表**（部分）：
-- claude, codex, cursor, gemini, trae, copilot, cline, qoder, kimi, pi, kiro 等
+**必需字段**：
+- `schema_version`: `"2.0"`
+- `source`: CLI 标识
 
-### 事件映射验证
-映射值必须是有效的标准事件名称（见上方列表）。无效的映射将导致插件加载失败。
+**可选字段**：
+- `detection`: 检测规则
+- `hook_installation`: Hook 配置
 
----
+### Schema 1.0（旧版）
 
-## 故障排除
+**功能**：
+- ✅ 源定义
+- ✅ 事件名称映射
+- ❌ 无自动检测
+- ❌ 无 hook 安装
 
-### 插件未出现在源列表中
+**限制**：
+- 必须手动使用 `--source` 参数
+- 必须手动配置 hook
+- 无自动 CLI 检测
 
-**原因 1：JSON 格式错误**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': Invalid JSON: ...
-```
-**解决**：使用 JSON 验证工具检查语法。
-
-**原因 2：缺少必需字段**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': Missing required 'source.key'
-```
-**解决**：确保所有必需字段都存在。
-
-**原因 3：`source.key` 格式无效**
-```
-[SourcePlugin] Error: Plugin 'my-cli.json': 'source.key' must match pattern: ...
-```
-**解决**：使用小写字母、数字和连字符，长度 2-64 字符。
-
-**原因 4：与内置源冲突**
-```
-[SourcePlugin] Warning: Plugin 'claude' conflicts with built-in source (skipped)
-```
-**解决**：使用不同的 `source.key`。
-
-### 如何查看日志
-
-Runtime 将插件加载错误输出到标准错误流（stderr）。
-
-在控制台运行 Runtime 时，错误会显示为：
-```
-[SourcePlugin] Error: Plugin 'bad-plugin.json': Invalid JSON: ...
-```
+**建议**：升级到 Schema 2.0 以获得完整功能。
 
 ---
 
-## 限制（Phase 1）
+## 高级主题
 
-### ✅ 支持的功能
-- 定义源元数据（名称、图标、key）
-- 事件名称映射
-- 选择权限响应格式
+### 路径展开
 
-### ❌ 暂不支持
-- **自动 Hook 安装**：插件不会自动配置 CLI hooks，需要手动设置
-- **热重载**：插件在 Runtime 启动时加载，修改后需要重启
-- **插件市场**：无下载或发现机制
-- **数字签名**：无验证或信任系统
-- **项目级插件**：只支持全局 `%AppData%` 位置
+路径支持多种展开格式：
 
-### 未来计划
-- Phase 2: 基于模板的 Hook 自动安装
-- Phase 3: 热重载和插件管理 API
-- Phase 4: 插件市场和发现机制
+```json
+{
+  "config_path": "~/.my-cli/hooks.json"          // 波浪号展开
+  "config_path": "${MY_CLI_HOME}/hooks.json"     // 环境变量
+  "config_path": "%APPDATA%\\my-cli\\hooks.json" // Windows 环境变量
+}
+```
+
+### 配置合并
+
+Hook 安装会保留现有的用户条目：
+
+**安装前**：
+```json
+[
+  {"event": "CustomEvent", "command": "my-script.sh"}
+]
+```
+
+**安装后**：
+```json
+[
+  {"event": "CustomEvent", "command": "my-script.sh"},
+  {"event": "PreToolUse", "command": "CodeIsland.Bridge --source my-cli", "timeout": 10}
+]
+```
+
+### 安全性
+
+所有插件都会进行安全验证：
+- 路径遍历防护
+- 正则灾难性回溯检查
+- 资源限制（事件、模式、超时）
+- 环境变量展开安全性
 
 ---
 
-## 插件文件位置
+## 文档
 
-**Windows**:  
-```
-%AppData%\CodeIsland\sources\
-C:\Users\<用户名>\AppData\Roaming\CodeIsland\sources\
-```
-
-**Linux/macOS** (未来支持):  
-```
-~/.config/CodeIsland/sources/
-```
-
-Runtime 会在首次访问源注册表时自动创建此目录。
+- **[插件 Schema 参考](plugin-schema.md)**（[English](plugin-schema.en.md)）- 完整字段参考
+- **[API 参考](api-reference.md)** - REST/WebSocket API 文档
+- **[集成指南](integration-guide.md)** - 展示端集成模式
 
 ---
 
-## 技术细节
+## 示例
 
-### 加载时机
-插件在首次访问 `CodeIslandSourceAdapterRegistry` 时懒加载（通常是第一个 hook 事件到达时）。
+完整的插件示例位于：
+- `bundled-plugins/claude.json` - Claude Code（claude-matcher 格式）
+- `bundled-plugins/codex.json` - Codex CLI（nested 格式，带额外配置）
 
-### 错误隔离
-单个插件的加载错误不会影响其他插件或 Runtime 稳定性。无效插件会被跳过并记录错误。
-
-### 内置源保护
-插件无法覆盖内置源。如果 `source.key` 冲突，内置源优先，插件被跳过。
-
-### 优先级
-加载顺序：
-1. 内置源（优先级最高）
-2. 插件（按文件名字母顺序）
-3. 如果多个插件使用相同的 key，第一个加载的插件生效
+更多示例见[插件 Schema 参考](plugin-schema.md)。
 
 ---
 
-## 参考资料
-
-- [API 参考](api-reference.zh.md)
-- [集成指南](integration-guide.zh.md)
-- [Runtime/Display 契约](runtime-display-contract.md)
+**最后更新**：2026-06-16  
+**当前 Schema**：2.0
