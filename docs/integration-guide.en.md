@@ -100,3 +100,34 @@ New AI CLI support belongs in Runtime, not in display clients. Add or extend a s
 If your app carries Runtime artifacts: read local `runtime-manifest.json`, fetch remote update manifest, compare `runtimeVersion` and `contractVersion`, download Runtime ZIP, verify `sha256`, extract to staging, check RuntimeHost/Bridge executables, stop only your owned local private Runtime, atomically switch `runtime/current`, restart Runtime, and verify `/api/health`.
 
 Do not silently update or close a shared remote Runtime unless the user explicitly requests it.
+
+## runtime-manifest.json Format
+
+The `runtime-manifest.json` file in Runtime ZIP contains:
+
+```json
+{
+  "runtimeVersion": "1.0.1",
+  "contractVersion": "1",
+  "hostExe": "CodeIsland.RuntimeHost.exe",
+  "bridgeExe": "CodeIsland.Bridge.exe",
+  "defaultPort": 32145,
+  "defaultHost": "127.0.0.1",
+  "defaultPipeName": null,
+  "defaultSettingsDir": null
+}
+```
+
+**Field descriptions**:
+
+- `runtimeVersion`: Runtime version number
+- `contractVersion`: API contract version for display compatibility check
+- `hostExe`: RuntimeHost executable name
+- `bridgeExe`: Bridge executable name
+- `defaultPort`: Default API port (overridable by `--port` or `api_port` in settings.json)
+- `defaultHost`: Default bind address (overridable by `--host` or `api_bind_host` in settings.json)
+- `defaultPipeName`: Default Named Pipe name (overridable by `--pipe-name`)
+- `defaultSettingsDir`: Default settings directory (overridable by `--settings-dir`)
+
+**Priority order**: Command-line args > SettingsManager > runtime-manifest.json > Hard-coded defaults
+

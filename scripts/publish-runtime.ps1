@@ -20,7 +20,9 @@ function Get-FileSha256 {
     param([string]$Path)
     $stream = [System.IO.File]::OpenRead($Path)
     try {
-        return [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($stream)).ToLowerInvariant()
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        $hash = $sha256.ComputeHash($stream)
+        return ($hash | ForEach-Object { $_.ToString("x2") }) -join ""
     }
     finally {
         $stream.Dispose()
@@ -39,6 +41,9 @@ function Write-RuntimeManifest {
         hostExe = "CodeIsland.RuntimeHost.exe"
         bridgeExe = "CodeIsland.Bridge.exe"
         defaultPort = 32145
+        defaultHost = "127.0.0.1"
+        defaultPipeName = $null
+        defaultSettingsDir = $null
     }
     $manifest | ConvertTo-Json | Set-Content -Path (Join-Path $RuntimeDir "runtime-manifest.json") -Encoding UTF8
 }

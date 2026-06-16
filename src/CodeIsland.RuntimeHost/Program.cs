@@ -1,13 +1,16 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Security.Cryptography;
 using CodeIsland.Core.Services;
 using CodeIsland.Hub;
 
+var manifest = RuntimeManifest.TryLoad();
 var arguments = RuntimeHostArguments.Parse(args);
-var settings = new SettingsManager(arguments.SettingsDirectory);
+var settingsDirectory = arguments.SettingsDirectory ?? manifest?.DefaultSettingsDir;
+var settings = new SettingsManager(settingsDirectory);
 var logger = new EventLogger();
-var apiPort = Math.Clamp(arguments.PortOverride ?? settings.Get("api_port", 32145), 1024, 65535);
+var apiPort = Math.Clamp(arguments.PortOverride ?? settings.Get("api_port", manifest?.DefaultPort ?? 32145), 1024, 65535);
 
 using var singleInstance = RuntimeHostSingleInstance.TryAcquire(apiPort);
 if (singleInstance == null)
@@ -40,7 +43,7 @@ var runtimeHost = new CodeIslandRuntimeHost(new CodeIslandRuntimeHostOptions
     ApiPort = apiPort,
     ApiToken = arguments.TokenOverride,
     PipeName = arguments.PipeNameOverride,
-    ApiHost = arguments.HostOverride,
+    ApiHost = arguments.HostOverride ?? settings.Get("api_bind_host", manifest?.DefaultHost ?? "127.0.0.1"),
     RepairSourcesOnStart = !arguments.SkipRepair
 });
 
@@ -49,7 +52,7 @@ try
     logger.Write("CodeIsland.RuntimeHost", "start-begin", new Dictionary<string, string?>
     {
         ["port"] = apiPort.ToString(),
-        ["host"] = arguments.HostOverride ?? settings.Get("api_bind_host", "127.0.0.1"),
+        ["host"] = arguments.HostOverride ?? settings.Get("api_bind_host", manifest?.DefaultHost ?? "127.0.0.1"),
         ["pipeName"] = arguments.PipeNameOverride,
         ["ownerPid"] = arguments.OwnerPid?.ToString(),
         ["shutdownWhenOwnerExits"] = arguments.ShutdownWhenOwnerExits.ToString()
@@ -220,5 +223,45 @@ internal sealed class RuntimeHostSingleInstance : IDisposable
     {
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"CodeIsland.RuntimeHost:{port}")));
         return $@"Local\CodeIsland.RuntimeHost.{hash[..16]}";
+    }
+}
+
+internal sealed record RuntimeManifest(
+    string RuntimeVersion,
+    string ContractVersion,
+    string HostExe,
+    string BridgeExe,
+    int DefaultPort,
+    string DefaultHost,
+    string? DefaultPipeName,
+    string? DefaultSettingsDir)
+{
+    public static RuntimeManifest? TryLoad()
+    {
+        try
+        {
+            var manifestPath = Path.Combine(AppContext.BaseDirectory, "runtime-manifest.json");
+            if (!File.Exists(manifestPath))
+                return null;
+
+            var json = File.ReadAllText(manifestPath);
+            var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            return new RuntimeManifest(
+                RuntimeVersion: root.GetProperty("runtimeVersion").GetString() ?? "0.0.0",
+                ContractVersion: root.GetProperty("contractVersion").GetString() ?? "1",
+                HostExe: root.GetProperty("hostExe").GetString() ?? "CodeIsland.RuntimeHost.exe",
+                BridgeExe: root.GetProperty("bridgeExe").GetString() ?? "CodeIsland.Bridge.exe",
+                DefaultPort: root.TryGetProperty("defaultPort", out var port) ? port.GetInt32() : 32145,
+                DefaultHost: root.TryGetProperty("defaultHost", out var host) ? host.GetString() ?? "127.0.0.1" : "127.0.0.1",
+                DefaultPipeName: root.TryGetProperty("defaultPipeName", out var pipe) && pipe.ValueKind != JsonValueKind.Null ? pipe.GetString() : null,
+                DefaultSettingsDir: root.TryGetProperty("defaultSettingsDir", out var settingsDir) && settingsDir.ValueKind != JsonValueKind.Null ? settingsDir.GetString() : null
+            );
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

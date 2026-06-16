@@ -164,4 +164,34 @@ IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 
 共享远程 Runtime 不应被任意展示端静默更新或关闭，除非用户明确选择了该操作。
 
+## runtime-manifest.json 格式
+
+Runtime ZIP 中的 `runtime-manifest.json` 包含以下字段：
+
+```json
+{
+  "runtimeVersion": "1.0.1",
+  "contractVersion": "1",
+  "hostExe": "CodeIsland.RuntimeHost.exe",
+  "bridgeExe": "CodeIsland.Bridge.exe",
+  "defaultPort": 32145,
+  "defaultHost": "127.0.0.1",
+  "defaultPipeName": null,
+  "defaultSettingsDir": null
+}
+```
+
+**字段说明**：
+
+- `runtimeVersion`：Runtime 版本号
+- `contractVersion`：API 合约版本，用于判断展示端兼容性
+- `hostExe`：RuntimeHost 可执行文件名
+- `bridgeExe`：Bridge 可执行文件名
+- `defaultPort`：默认 API 端口（可被 `--port` 或 `settings.json` 中的 `api_port` 覆盖）
+- `defaultHost`：默认绑定地址（可被 `--host` 或 `settings.json` 中的 `api_bind_host` 覆盖）
+- `defaultPipeName`：默认 Named Pipe 名称（可被 `--pipe-name` 覆盖）
+- `defaultSettingsDir`：默认 settings 目录（可被 `--settings-dir` 覆盖）
+
+**优先级顺序**：命令行参数 > SettingsManager > runtime-manifest.json > 硬编码默认值
+
 
