@@ -1,10 +1,10 @@
-# CodeIsland Runtime Display Contract
+﻿# CodeOrbit Runtime Display Contract
 
 [简体中文](runtime-display-contract.zh-CN.md) | [Documentation index](README.md)
 
-This document defines the intended boundary between the CodeIsland Runtime and any display client. Runtime is the centralized control plane for CodeIsland: it ingests CLI hook activity from configured sources, normalizes session and pending-action state, and exposes that state to one or more display clients. A display client can be the current WPF HUD, a web UI, a mobile app, a hardware display, or a third-party integration.
+This document defines the intended boundary between the CodeOrbit Runtime and any display client. Runtime is the centralized control plane for CodeOrbit: it ingests CLI hook activity from configured sources, normalizes session and pending-action state, and exposes that state to one or more display clients. A display client can be the current WPF HUD, a web UI, a mobile app, a hardware display, or a third-party integration.
 
-The current Windows HUD starts or connects to `CodeIsland.RuntimeHost` and consumes Runtime state through the public REST/WebSocket contract. The Runtime source is being extracted into the independent `CodeIsland-Runtime` repository, while the Windows repository remains the official WPF display client.
+The current Windows HUD starts or connects to `CodeOrbit.RuntimeHost` and consumes Runtime state through the public REST/WebSocket contract. The Runtime source is being extracted into the independent `CodeOrbit-Runtime` repository, while the Windows repository remains the official WPF display client.
 
 Developer entry points:
 
@@ -54,14 +54,14 @@ Runtime must remain localhost-only by default. Remote/mobile access requires exp
 
 ```text
 AI CLI hook
-  -> CodeIsland.Bridge
+  -> CodeOrbit.Bridge
   -> Runtime hook server
   -> Runtime session/pending state
   -> REST snapshots + WebSocket events
   -> Display client
   -> REST action calls
   -> Runtime resolves pending hook response
-  -> CodeIsland.Bridge stdout
+  -> CodeOrbit.Bridge stdout
 ```
 
 The WPF HUD is currently both a display and the process that may start a managed local Runtime process. That is an operations concern only; WPF must not keep business ownership of hook processing or Runtime state.
@@ -73,7 +73,7 @@ The WPF HUD is currently both a display and the process that may start a managed
 All other API routes require the local Runtime token. Clients may provide the token in one of these forms:
 
 * `Authorization: Bearer <token>`
-* `X-CodeIsland-Token: <token>`
+* `X-CodeOrbit-Token: <token>`
 * `?token=<token>` query parameter
 
 The query token form exists for simple WebSocket clients and local tooling. UI clients should prefer headers when possible.
@@ -83,7 +83,7 @@ Unauthorized requests return:
 ```json
 {
   "code": "unauthorized",
-  "message": "Missing or invalid CodeIsland API token"
+  "message": "Missing or invalid CodeOrbit API token"
 }
 ```
 
@@ -107,7 +107,7 @@ All routes below are under `/api`.
 | `GET` | `/sources/{source}` | Get source support/install status. | `SourceStatusDto` |
 | `GET` | `/sources/{source}/status` | Alias for source status. | `SourceStatusDto` |
 | `POST` | `/sources/{source}/install` | Install or update hooks for a source. | `SourceOperationResultDto` |
-| `POST` | `/sources/{source}/uninstall` | Remove CodeIsland-owned hooks for a source. | `SourceOperationResultDto` |
+| `POST` | `/sources/{source}/uninstall` | Remove CodeOrbit-owned hooks for a source. | `SourceOperationResultDto` |
 | `POST` | `/sources/{source}/repair` | Repair hooks for one source. | `SourceOperationResultDto` |
 | `POST` | `/sources/repair-all` | Repair all already-installed hook configurations. | `{ success: boolean }` |
 | `GET` | `/runtime-assets` | Get deployed Runtime hook script and bridge paths. | `RuntimeAssetsDto` |
@@ -169,7 +169,7 @@ Several WebSocket clients may connect at the same time. Runtime broadcasts every
 
 ## DTO Compatibility Rules
 
-The DTOs in `CodeIsland.Contracts` are the public display-client contract.
+The DTOs in `CodeOrbit.Contracts` are the public display-client contract.
 
 Rules for future changes:
 
@@ -193,13 +193,13 @@ These are known gaps between the desired contract and the current codebase:
 
 Recommended migration order:
 
-1. Stabilize this contract and treat `CodeIsland.Contracts` as the display boundary.
+1. Stabilize this contract and treat `CodeOrbit.Contracts` as the display boundary.
 2. Move hook server implementation from WPF into Runtime/Hub. (Completed for the embedded Named Pipe server.)
 3. Collapse duplicated WPF state handling into Runtime-owned state.
 4. Introduce source adapter interfaces behind existing static facades.
 5. Add an independent Runtime host process.
 6. Convert WPF HUD into an API/WebSocket client.
 7. Publish display-client docs and minimal sample.
-8. Extract Runtime-owned projects into the independent `CodeIsland-Runtime` repository and keep this document as the display boundary contract.
+8. Extract Runtime-owned projects into the independent `CodeOrbit-Runtime` repository and keep this document as the display boundary contract.
 
 

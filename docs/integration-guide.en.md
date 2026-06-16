@@ -1,10 +1,10 @@
-# CodeIsland Runtime Integration Guide
+﻿# CodeOrbit Runtime Integration Guide
 
 [简体中文](integration-guide.md) | [Documentation index](README.md)
 
-This guide explains how other applications integrate CodeIsland Runtime. Applications include desktop apps, web UIs, browser extensions, IDE plugins, mobile companions, hardware displays, internal dashboards, and future CLI source adapters.
+This guide explains how other applications integrate CodeOrbit Runtime. Applications include desktop apps, web UIs, browser extensions, IDE plugins, mobile companions, hardware displays, internal dashboards, and future CLI source adapters.
 
-Runtime is the centralized state and CLI hook control plane. Other applications should provide presentation, interaction, and device-specific UX. Unless you are developing Runtime itself or adding a CLI source adapter, do not depend on `CodeIsland.Core`, `CodeIsland.Hub`, Named Pipe internals, transcript files, or hook response builders.
+Runtime is the centralized state and CLI hook control plane. Other applications should provide presentation, interaction, and device-specific UX. Unless you are developing Runtime itself or adding a CLI source adapter, do not depend on `CodeOrbit.Core`, `CodeOrbit.Hub`, Named Pipe internals, transcript files, or hook response builders.
 
 ## Integration Mode Overview
 
@@ -20,7 +20,7 @@ Runtime is the centralized state and CLI hook control plane. Other applications 
 
 ## Mode 1: Desktop App Bundles Runtime
 
-Use this when you want an install-and-run desktop display. Bundle `CodeIsland.RuntimeHost.exe`, `CodeIsland.Bridge.exe`, and `runtime-manifest.json`.
+Use this when you want an install-and-run desktop display. Bundle `CodeOrbit.RuntimeHost.exe`, `CodeOrbit.Bridge.exe`, and `runtime-manifest.json`.
 
 Startup flow:
 
@@ -30,7 +30,7 @@ Startup flow:
 4. If no healthy Runtime exists, start RuntimeHost:
 
 ```powershell
-CodeIsland.RuntimeHost.exe --settings-dir "%APPDATA%\CodeIsland" --host 127.0.0.1 --port 32145 --token <token> --owner-pid <app-pid> --shutdown-when-owner-exits
+CodeOrbit.RuntimeHost.exe --settings-dir "%APPDATA%\CodeOrbit" --host 127.0.0.1 --port 32145 --token <token> --owner-pid <app-pid> --shutdown-when-owner-exits
 ```
 
 5. Wait for `/api/health`.
@@ -49,7 +49,7 @@ Use this for debug tools, enterprise panels, IDE plugins, or advanced custom fro
 The computer must explicitly expose Runtime:
 
 ```powershell
-CodeIsland.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <strong-token>
+CodeOrbit.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <strong-token>
 ```
 
 Device connection:
@@ -80,7 +80,7 @@ Fetch `/api/sessions` and `/api/pending` on startup, recognize only the event ty
 
 ## Mode 7: Add A New CLI Source
 
-New AI CLI support belongs in Runtime, not in display clients. Add or extend a source adapter in `CodeIsland.Core/Sources`, update hook install/repair and Bridge/source resolver behavior, add tests, then update API and display contract docs.
+New AI CLI support belongs in Runtime, not in display clients. Add or extend a source adapter in `CodeOrbit.Core/Sources`, update hook install/repair and Bridge/source resolver behavior, add tests, then update API and display contract docs.
 
 ## Minimum Display Checklist
 
@@ -109,8 +109,8 @@ The `runtime-manifest.json` file in Runtime ZIP contains:
 {
   "runtimeVersion": "1.0.1",
   "contractVersion": "1",
-  "hostExe": "CodeIsland.RuntimeHost.exe",
-  "bridgeExe": "CodeIsland.Bridge.exe",
+  "hostExe": "CodeOrbit.RuntimeHost.exe",
+  "bridgeExe": "CodeOrbit.Bridge.exe",
   "defaultPort": 32145,
   "defaultHost": "127.0.0.1",
   "defaultPipeName": null,

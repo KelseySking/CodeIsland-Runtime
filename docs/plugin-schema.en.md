@@ -1,6 +1,6 @@
-# CodeIsland Plugin Schema Reference
+﻿# CodeOrbit Plugin Schema Reference
 
-This document describes the JSON schema for CodeIsland Runtime plugins (Schema Version 2.0).
+This document describes the JSON schema for CodeOrbit Runtime plugins (Schema Version 2.0).
 
 ## Overview
 
@@ -185,12 +185,12 @@ Structure: Array of hook objects
 [
   {
     "event": "PreToolUse",
-    "command": "CodeIsland.Bridge --source my-cli",
+    "command": "CodeOrbit.Bridge --source my-cli",
     "timeout": 10
   },
   {
     "event": "PostToolUse",
-    "command": "CodeIsland.Bridge --source my-cli",
+    "command": "CodeOrbit.Bridge --source my-cli",
     "timeout": 10
   }
 ]
@@ -207,13 +207,13 @@ Structure: Nested object with event arrays
   "hooks": {
     "PreToolUse": [
       {
-        "command": "CodeIsland.Bridge --source my-cli",
+        "command": "CodeOrbit.Bridge --source my-cli",
         "timeout": 10
       }
     ],
     "PostToolUse": [
       {
-        "command": "CodeIsland.Bridge --source my-cli",
+        "command": "CodeOrbit.Bridge --source my-cli",
         "timeout": 10
       }
     ]
@@ -236,7 +236,7 @@ Structure: Nested with matcher support
         "hooks": [
           {
             "type": "command",
-            "command": "CodeIsland.Bridge --source my-cli",
+            "command": "CodeOrbit.Bridge --source my-cli",
             "timeout": 10
           }
         ]
@@ -347,8 +347,8 @@ Located in Runtime's `bundled-plugins/` directory:
 - Cannot be overridden by user plugins
 
 ### User Plugins
-Located in `%AppData%\CodeIsland\sources\`:
-- Windows: `C:\Users\<Username>\AppData\Roaming\CodeIsland\sources\`
+Located in `%AppData%\CodeOrbit\sources\`:
+- Windows: `C:\Users\<Username>\AppData\Roaming\CodeOrbit\sources\`
 - Loaded after bundled plugins
 - Can define custom CLIs
 
@@ -359,7 +359,7 @@ Located in `%AppData%\CodeIsland\sources\`:
 Use `ConfigInstaller` to install plugin hooks:
 
 ```csharp
-using CodeIsland.Core.Services;
+using CodeOrbit.Core.Services;
 
 // Install hooks
 bool success = ConfigInstaller.InstallPlugin("my-cli");
@@ -470,7 +470,7 @@ Schema 1.0 plugins (without `detection` and `hook_installation`) are still suppo
 ### Plugin Not Loading
 
 1. **Check JSON syntax**: Use `python -m json.tool plugin.json` to validate
-2. **Check file location**: Must be in `%AppData%\CodeIsland\sources\`
+2. **Check file location**: Must be in `%AppData%\CodeOrbit\sources\`
 3. **Check validation errors**: Look for error logs in Runtime output
 4. **Check source key**: Must be unique and not conflict with bundled plugins
 

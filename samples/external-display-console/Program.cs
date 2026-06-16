@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
@@ -19,7 +19,7 @@ internal static class ExternalDisplaySample
 
         if (string.IsNullOrWhiteSpace(options.Token))
         {
-            Console.Error.WriteLine("缺少 API token。请传入 --token、设置 CODEISLAND_API_TOKEN，或先启动一次 CodeIsland，让 %APPDATA%\\CodeIsland\\settings.json 写入 api_token。");
+            Console.Error.WriteLine("缺少 API token。请传入 --token、设置 CodeOrbit_API_TOKEN，或先启动一次 CodeOrbit，让 %APPDATA%\\CodeOrbit\\settings.json 写入 api_token。");
             PrintUsage();
             return 1;
         }
@@ -55,15 +55,15 @@ internal static class ExternalDisplaySample
     private static void PrintUsage()
     {
         Console.WriteLine("""
-        CodeIsland 外部展示控制台示例
+        CodeOrbit 外部展示控制台示例
 
         用法：
           dotnet run --project samples/external-display-console -- --token <api_token>
           dotnet run --project samples/external-display-console -- --base-url http://127.0.0.1:32145 --token <api_token>
 
         环境变量：
-          CODEISLAND_API_URL     默认 http://127.0.0.1:32145
-          CODEISLAND_API_TOKEN   API token。未设置时，示例会尝试读取 %APPDATA%\CodeIsland\settings.json。
+          CodeOrbit_API_URL     默认 http://127.0.0.1:32145
+          CodeOrbit_API_TOKEN   API token。未设置时，示例会尝试读取 %APPDATA%\CodeOrbit\settings.json。
 
         命令：
           refresh
@@ -80,8 +80,8 @@ internal sealed record ClientOptions(string BaseUrl, string? Token, bool NoEvent
 {
     public static ClientOptions Parse(string[] args)
     {
-        var baseUrl = Environment.GetEnvironmentVariable("CODEISLAND_API_URL") ?? "http://127.0.0.1:32145";
-        var token = Environment.GetEnvironmentVariable("CODEISLAND_API_TOKEN") ?? TryReadTokenFromSettings();
+        var baseUrl = Environment.GetEnvironmentVariable("CodeOrbit_API_URL") ?? "http://127.0.0.1:32145";
+        var token = Environment.GetEnvironmentVariable("CodeOrbit_API_TOKEN") ?? TryReadTokenFromSettings();
         var noEvents = false;
         var showHelp = false;
 
@@ -116,7 +116,7 @@ internal sealed record ClientOptions(string BaseUrl, string? Token, bool NoEvent
         try
         {
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var settingsPath = Path.Combine(appData, "CodeIsland", "settings.json");
+            var settingsPath = Path.Combine(appData, "CodeOrbit", "settings.json");
             if (!File.Exists(settingsPath))
                 return null;
 

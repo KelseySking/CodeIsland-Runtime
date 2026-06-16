@@ -1,6 +1,6 @@
-# Bundled Plugins
+﻿# Bundled Plugins
 
-This directory contains plugin definitions for built-in CLI tools that ship with CodeIsland Runtime.
+This directory contains plugin definitions for built-in CLI tools that ship with CodeOrbit Runtime.
 
 ## Structure
 
@@ -18,7 +18,7 @@ bundled-plugins/
 ## Bundled vs User Plugins
 
 - **Bundled plugins**: Embedded in Runtime, loaded first, cannot be overridden
-- **User plugins**: Located in `%AppData%/CodeIsland/sources/`, loaded second
+- **User plugins**: Located in `%AppData%/CodeOrbit/sources/`, loaded second
 
 ## Priority
 

@@ -1,10 +1,10 @@
-# CodeIsland Runtime Integration Guide
+﻿# CodeOrbit Runtime Integration Guide
 
 [English](integration-guide.en.md) | [文档索引](README_CN.md)
 
-本文档说明其他应用如何集成 CodeIsland Runtime。这里的“其他应用”包括 Windows/Mac/Linux 桌面应用、Web UI、浏览器插件、IDE 插件、手机 companion、硬件屏幕、企业内部面板，以及后续新的 CLI source adapter。
+本文档说明其他应用如何集成 CodeOrbit Runtime。这里的“其他应用”包括 Windows/Mac/Linux 桌面应用、Web UI、浏览器插件、IDE 插件、手机 companion、硬件屏幕、企业内部面板，以及后续新的 CLI source adapter。
 
-Runtime 的核心原则是：Runtime 做中心化状态和 CLI hook 控制面，其他应用只做展示、交互和设备体验。除非你是在开发 Runtime 自身或新增 source adapter，否则不要直接依赖 `CodeIsland.Core`、`CodeIsland.Hub`、Named Pipe、transcript 文件或 hook response builder。
+Runtime 的核心原则是：Runtime 做中心化状态和 CLI hook 控制面，其他应用只做展示、交互和设备体验。除非你是在开发 Runtime 自身或新增 source adapter，否则不要直接依赖 `CodeOrbit.Core`、`CodeOrbit.Hub`、Named Pipe、transcript 文件或 hook response builder。
 
 ## 集成方式总览
 
@@ -22,8 +22,8 @@ Runtime 的核心原则是：Runtime 做中心化状态和 CLI hook 控制面，
 
 适合想提供“安装后即用”的桌面展示端。应用随包携带：
 
-- `CodeIsland.RuntimeHost.exe`
-- `CodeIsland.Bridge.exe`
+- `CodeOrbit.RuntimeHost.exe`
+- `CodeOrbit.Bridge.exe`
 - `runtime-manifest.json`
 
 启动流程：
@@ -31,10 +31,10 @@ Runtime 的核心原则是：Runtime 做中心化状态和 CLI hook 控制面，
 1. 读取或生成本地 API token。
 2. 选择端口，默认 `32145`。
 3. 先请求 `GET /api/health`，如果已有健康 Runtime，直接连接。
-4. 如果没有健康 Runtime，启动 `CodeIsland.RuntimeHost.exe`：
+4. 如果没有健康 Runtime，启动 `CodeOrbit.RuntimeHost.exe`：
 
 ```powershell
-CodeIsland.RuntimeHost.exe --settings-dir "%APPDATA%\CodeIsland" --host 127.0.0.1 --port 32145 --token <token> --owner-pid <app-pid> --shutdown-when-owner-exits
+CodeOrbit.RuntimeHost.exe --settings-dir "%APPDATA%\CodeOrbit" --host 127.0.0.1 --port 32145 --token <token> --owner-pid <app-pid> --shutdown-when-owner-exits
 ```
 
 5. 等待 `/api/health` 成功。
@@ -64,7 +64,7 @@ CodeIsland.RuntimeHost.exe --settings-dir "%APPDATA%\CodeIsland" --host 127.0.0.
 电脑端启动 Runtime 时必须显式开放监听：
 
 ```powershell
-CodeIsland.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <strong-token>
+CodeOrbit.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <strong-token>
 ```
 
 移动端连接：
@@ -103,7 +103,7 @@ Web 前端有两种推荐形态。
 IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 
 1. 插件检测本机 Runtime 是否存在。
-2. 如果用户选择“连接 CodeIsland Runtime”，读取用户提供的 token 或通过未来 pairing 流程获取 token。
+2. 如果用户选择“连接 CodeOrbit Runtime”，读取用户提供的 token 或通过未来 pairing 流程获取 token。
 3. 插件通过 REST/WebSocket 展示状态。
 4. 插件的审批/问答按钮调用 Runtime action endpoint。
 5. 插件如果提供“安装 hook”按钮，也应该调用 `/api/sources/{source}/install`，而不是自己改写 Claude/Codex 配置。
@@ -123,7 +123,7 @@ IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 
 如果要让 Runtime 支持新的 AI CLI，不要从展示端接入。新的 source 应该进入 Runtime 仓库：
 
-- 在 `CodeIsland.Core/Sources` 增加或扩展 source adapter。
+- 在 `CodeOrbit.Core/Sources` 增加或扩展 source adapter。
 - 在 Runtime/Core 中定义 source metadata、事件别名、能力和响应格式。
 - 在 hook 安装/修复路径中加入该 source。
 - 在 Bridge 或 source resolver 中识别该 CLI。
@@ -157,7 +157,7 @@ IDE 插件通常不应该自己处理 CLI hook。推荐流程：
 4. 下载 Runtime ZIP。
 5. 校验 `sha256`。
 6. 解压到 staging 目录。
-7. 检查 `CodeIsland.RuntimeHost.exe` 和 `CodeIsland.Bridge.exe` 存在。
+7. 检查 `CodeOrbit.RuntimeHost.exe` 和 `CodeOrbit.Bridge.exe` 存在。
 8. 停止自己拥有的本地私有 Runtime。
 9. 原子切换 `runtime/current`。
 10. 重启 Runtime 并验证 `/api/health`。
@@ -172,8 +172,8 @@ Runtime ZIP 中的 `runtime-manifest.json` 包含以下字段：
 {
   "runtimeVersion": "1.0.1",
   "contractVersion": "1",
-  "hostExe": "CodeIsland.RuntimeHost.exe",
-  "bridgeExe": "CodeIsland.Bridge.exe",
+  "hostExe": "CodeOrbit.RuntimeHost.exe",
+  "bridgeExe": "CodeOrbit.Bridge.exe",
   "defaultPort": 32145,
   "defaultHost": "127.0.0.1",
   "defaultPipeName": null,

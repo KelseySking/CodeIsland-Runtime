@@ -1,0 +1,17 @@
+﻿<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodeOrbit.Bridge/CodeOrbit.Bridge.csproj" />
+    <Project Path="src/CodeOrbit.Contracts/CodeOrbit.Contracts.csproj" />
+    <Project Path="src/CodeOrbit.Core/CodeOrbit.Core.csproj" />
+    <Project Path="src/CodeOrbit.Hub/CodeOrbit.Hub.csproj" />
+    <Project Path="src/CodeOrbit.RuntimeHost/CodeOrbit.RuntimeHost.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodeOrbit.Bridge.Tests/CodeOrbit.Bridge.Tests.csproj" />
+    <Project Path="tests/CodeOrbit.Core.Tests/CodeOrbit.Core.Tests.csproj" />
+    <Project Path="tests/CodeOrbit.Hub.Tests/CodeOrbit.Hub.Tests.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/external-display-console/ExternalDisplay.Sample.csproj" />
+  </Folder>
+</Solution>

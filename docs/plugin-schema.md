@@ -1,6 +1,6 @@
-# CodeIsland 插件 Schema 参考
+﻿# CodeOrbit 插件 Schema 参考
 
-本文档描述 CodeIsland Runtime 插件的 JSON schema（Schema 版本 2.0）。
+本文档描述 CodeOrbit Runtime 插件的 JSON schema（Schema 版本 2.0）。
 
 ## 概述
 
@@ -185,12 +185,12 @@
 [
   {
     "event": "PreToolUse",
-    "command": "CodeIsland.Bridge --source my-cli",
+    "command": "CodeOrbit.Bridge --source my-cli",
     "timeout": 10
   },
   {
     "event": "PostToolUse",
-    "command": "CodeIsland.Bridge --source my-cli",
+    "command": "CodeOrbit.Bridge --source my-cli",
     "timeout": 10
   }
 ]
@@ -207,13 +207,13 @@
   "hooks": {
     "PreToolUse": [
       {
-        "command": "CodeIsland.Bridge --source my-cli",
+        "command": "CodeOrbit.Bridge --source my-cli",
         "timeout": 10
       }
     ],
     "PostToolUse": [
       {
-        "command": "CodeIsland.Bridge --source my-cli",
+        "command": "CodeOrbit.Bridge --source my-cli",
         "timeout": 10
       }
     ]
@@ -236,7 +236,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CodeIsland.Bridge --source my-cli",
+            "command": "CodeOrbit.Bridge --source my-cli",
             "timeout": 10
           }
         ]
@@ -347,8 +347,8 @@
 - 用户插件无法覆盖
 
 ### 用户插件（User Plugins）
-位于 `%AppData%\CodeIsland\sources\`：
-- Windows: `C:\Users\<用户名>\AppData\Roaming\CodeIsland\sources\`
+位于 `%AppData%\CodeOrbit\sources\`：
+- Windows: `C:\Users\<用户名>\AppData\Roaming\CodeOrbit\sources\`
 - 在内置插件之后加载
 - 可以定义自定义 CLI
 
@@ -359,7 +359,7 @@
 使用 `ConfigInstaller` 安装插件 hook：
 
 ```csharp
-using CodeIsland.Core.Services;
+using CodeOrbit.Core.Services;
 
 // 安装 hook
 bool success = ConfigInstaller.InstallPlugin("my-cli");
@@ -470,7 +470,7 @@ Schema 1.0 插件（没有 `detection` 和 `hook_installation`）仍然支持，
 ### 插件未加载
 
 1. **检查 JSON 语法**：使用 `python -m json.tool plugin.json` 验证
-2. **检查文件位置**：必须在 `%AppData%\CodeIsland\sources\`
+2. **检查文件位置**：必须在 `%AppData%\CodeOrbit\sources\`
 3. **检查验证错误**：查看 Runtime 输出中的错误日志
 4. **检查源键**：必须唯一且不与内置插件冲突
 

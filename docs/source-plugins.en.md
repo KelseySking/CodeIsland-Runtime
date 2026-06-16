@@ -1,6 +1,6 @@
-# CLI Source Plugin System
+﻿# CLI Source Plugin System
 
-CodeIsland Runtime supports extending CLI sources through JSON plugin files without recompilation. The plugin system enables automatic CLI detection and hook installation.
+CodeOrbit Runtime supports extending CLI sources through JSON plugin files without recompilation. The plugin system enables automatic CLI detection and hook installation.
 
 ## Overview
 
@@ -14,7 +14,7 @@ The plugin system provides three main capabilities:
 
 ### Basic Plugin (Schema 2.0)
 
-Create a JSON file (e.g., `my-cli.json`) in `%AppData%\CodeIsland\sources\`:
+Create a JSON file (e.g., `my-cli.json`) in `%AppData%\CodeOrbit\sources\`:
 
 ```json
 {
@@ -43,7 +43,7 @@ Create a JSON file (e.g., `my-cli.json`) in `%AppData%\CodeIsland\sources\`:
 Use `ConfigInstaller` to install hooks automatically:
 
 ```csharp
-using CodeIsland.Core.Services;
+using CodeOrbit.Core.Services;
 
 // Install hooks for your CLI
 bool success = ConfigInstaller.InstallPlugin("my-cli");
@@ -59,15 +59,15 @@ The `InstallPlugin` method will:
 1. Read the plugin definition
 2. Expand paths (`~/`, environment variables)
 3. Create the configuration file
-4. Merge CodeIsland hook entries
+4. Merge CodeOrbit hook entries
 5. Preserve existing user entries
 
 ### Start Runtime
 
-Start CodeIsland Runtime, and plugins will load automatically:
+Start CodeOrbit Runtime, and plugins will load automatically:
 
 ```powershell
-dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token
+dotnet run --project src/CodeOrbit.RuntimeHost -- --token dev-token
 ```
 
 Your CLI source will appear in the `/api/sources` endpoint and can be automatically detected when running.
@@ -167,7 +167,7 @@ Properties:
 
 ### User Plugins
 
-Created by users in `%AppData%\CodeIsland\sources\`:
+Created by users in `%AppData%\CodeOrbit\sources\`:
 - Custom CLI support
 - Lower priority than bundled plugins
 - Can define any source key (except built-in ones)
@@ -319,7 +319,7 @@ Hook installation preserves existing user entries:
 ```json
 [
   {"event": "CustomEvent", "command": "my-script.sh"},
-  {"event": "PreToolUse", "command": "CodeIsland.Bridge --source my-cli", "timeout": 10}
+  {"event": "PreToolUse", "command": "CodeOrbit.Bridge --source my-cli", "timeout": 10}
 ]
 ```
 

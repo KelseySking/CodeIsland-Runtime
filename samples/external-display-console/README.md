@@ -1,28 +1,28 @@
-# 外部展示控制台示例
+﻿# 外部展示控制台示例
 
-这是一个最小 CodeIsland Runtime API 展示客户端。它只使用 .NET 内置 HTTP 和 WebSocket API，因此不需要安装包，也不依赖 WPF 或 Hub 内部实现类型。
+这是一个最小 CodeOrbit Runtime API 展示客户端。它只使用 .NET 内置 HTTP 和 WebSocket API，因此不需要安装包，也不依赖 WPF 或 Hub 内部实现类型。
 
 ## 连接主应用
 
-先启动 CodeIsland，然后运行：
+先启动 CodeOrbit，然后运行：
 
 ```powershell
 dotnet run --project samples/external-display-console
 ```
 
-示例会尝试从 `%APPDATA%\CodeIsland\settings.json` 读取本地 token。
+示例会尝试从 `%APPDATA%\CodeOrbit\settings.json` 读取本地 token。
 
 也可以显式传入 token：
 
 ```powershell
-$settings = Get-Content "$env:APPDATA\CodeIsland\settings.json" | ConvertFrom-Json
+$settings = Get-Content "$env:APPDATA\CodeOrbit\settings.json" | ConvertFrom-Json
 dotnet run --project samples/external-display-console -- --token $settings.api_token
 ```
 
 ## 连接独立 RuntimeHost
 
 ```powershell
-dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token --port 32145
+dotnet run --project src/CodeOrbit.RuntimeHost -- --token dev-token --port 32145
 dotnet run --project samples/external-display-console -- --token dev-token
 ```
 

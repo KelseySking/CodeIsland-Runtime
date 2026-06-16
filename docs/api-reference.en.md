@@ -1,8 +1,8 @@
-# CodeIsland Runtime API Reference
+﻿# CodeOrbit Runtime API Reference
 
 [简体中文](api-reference.md) | [Documentation index](README.md)
 
-This document is for Windows HUD, web, mobile, hardware displays, and third-party display clients. It describes the public REST/WebSocket contract exposed by Runtime. Source definitions live in `src/CodeIsland.Contracts/ApiDtos.cs` and `src/CodeIsland.Hub/CodeIslandApiHost.cs`.
+This document is for Windows HUD, web, mobile, hardware displays, and third-party display clients. It describes the public REST/WebSocket contract exposed by Runtime. Source definitions live in `src/CodeOrbit.Contracts/ApiDtos.cs` and `src/CodeOrbit.Hub/CodeOrbitApiHost.cs`.
 
 ## Base URL And Auth
 
@@ -18,7 +18,7 @@ Accepted token carriers:
 
 ```http
 Authorization: Bearer <api_token>
-X-CodeIsland-Token: <api_token>
+X-CodeOrbit-Token: <api_token>
 ```
 
 WebSocket clients may pass the token in the query string:
@@ -30,7 +30,7 @@ ws://127.0.0.1:32145/api/events?token=<api_token>
 Runtime is localhost-only by default. Remote access must be explicitly enabled:
 
 ```powershell
-CodeIsland.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <token>
+CodeOrbit.RuntimeHost.exe --host 0.0.0.0 --port 32145 --token <token>
 ```
 
 Browser CORS, pairing codes, token rotation, and public-internet exposure are not default Runtime features. Web displays should use a same-origin proxy, desktop shell, or a later pairing/security design.
@@ -39,7 +39,7 @@ Browser CORS, pairing codes, token rotation, and public-internet exposure are no
 
 | Argument | Description |
 | --- | --- |
-| `--settings-dir <path>` | Directory containing `settings.json`. Defaults to `%APPDATA%\CodeIsland`. |
+| `--settings-dir <path>` | Directory containing `settings.json`. Defaults to `%APPDATA%\CodeOrbit`. |
 | `--port <port>` | REST/WebSocket port. Normalized to `1024..65535`. |
 | `--host <host>` | Bind host. Defaults to `127.0.0.1`; `0.0.0.0` means explicit shared remote mode. |
 | `--token <token>` | API token. If omitted, Runtime reads or creates one in settings. |
@@ -63,7 +63,7 @@ Error shape:
 ```json
 {
   "code": "unauthorized",
-  "message": "Missing or invalid CodeIsland API token"
+  "message": "Missing or invalid CodeOrbit API token"
 }
 ```
 
@@ -88,8 +88,8 @@ If you are building a desktop app, web UI, browser extension, IDE plugin, mobile
 | `GET` | `/api/sources` | List supported CLI sources and install status. |
 | `GET` | `/api/sources/{source}` | Get source status. |
 | `GET` | `/api/sources/{source}/status` | Source status alias. |
-| `POST` | `/api/sources/{source}/install` | Install or update the CodeIsland hook for one source. |
-| `POST` | `/api/sources/{source}/uninstall` | Remove CodeIsland-owned hook entries. |
+| `POST` | `/api/sources/{source}/install` | Install or update the CodeOrbit hook for one source. |
+| `POST` | `/api/sources/{source}/uninstall` | Remove CodeOrbit-owned hook entries. |
 | `POST` | `/api/sources/{source}/repair` | Repair one source hook configuration. |
 | `POST` | `/api/sources/repair-all` | Repair every installed source. |
 | `GET` | `/api/runtime-assets` | Get Runtime hook script and bridge paths. |
@@ -140,7 +140,7 @@ No token required.
 
 ```json
 {
-  "product": "CodeIsland Runtime",
+  "product": "CodeOrbit Runtime",
   "version": "1.0.1.0"
 }
 ```
@@ -215,9 +215,9 @@ Failures usually return `400` with `success=false`.
 
 ```json
 {
-  "runtimeDirectory": "C:\\Users\\name\\.codeisland",
-  "hookScriptPath": "C:\\Users\\name\\.codeisland\\codeisland-hook.ps1",
-  "bridgeExePath": "C:\\Users\\name\\.codeisland\\codeisland-bridge.exe",
+  "runtimeDirectory": "C:\\Users\\name\\.CodeOrbit",
+  "hookScriptPath": "C:\\Users\\name\\.CodeOrbit\\CodeOrbit-hook.ps1",
+  "bridgeExePath": "C:\\Users\\name\\.CodeOrbit\\CodeOrbit-bridge.exe",
   "installed": true
 }
 ```
@@ -234,8 +234,8 @@ Failures usually return `400` with `success=false`.
     "sessionId": "abc",
     "source": "codex",
     "sourceDisplayName": "Codex",
-    "projectName": "CodeIsland",
-    "workingDirectory": "D:\\Work\\CodeIsland",
+    "projectName": "CodeOrbit",
+    "workingDirectory": "D:\\Work\\CodeOrbit",
     "status": "Running",
     "currentToolName": "Read",
     "currentToolDescription": "Read README.md",
@@ -276,8 +276,8 @@ Returns `PendingActionDto[]`:
     "sessionId": "abc",
     "source": "codex",
     "sourceDisplayName": "Codex",
-    "projectName": "CodeIsland",
-    "workingDirectory": "D:\\Work\\CodeIsland",
+    "projectName": "CodeOrbit",
+    "workingDirectory": "D:\\Work\\CodeOrbit",
     "createdAtUtc": "2026-06-15T00:00:00Z",
     "permission": {
       "sessionId": "abc",
@@ -448,8 +448,8 @@ Runtime ZIP payload manifest:
 {
   "runtimeVersion": "1.0.1",
   "contractVersion": "1",
-  "hostExe": "CodeIsland.RuntimeHost.exe",
-  "bridgeExe": "CodeIsland.Bridge.exe",
+  "hostExe": "CodeOrbit.RuntimeHost.exe",
+  "bridgeExe": "CodeOrbit.Bridge.exe",
   "defaultPort": 32145
 }
 ```
@@ -460,7 +460,7 @@ Remote update manifest:
 {
   "runtimeVersion": "1.0.1",
   "contractVersion": "1",
-  "downloadUrl": "https://.../CodeIsland-Runtime-win-x64-v1.0.1.zip",
+  "downloadUrl": "https://.../CodeOrbit-Runtime-win-x64-v1.0.1.zip",
   "sha256": "..."
 }
 ```

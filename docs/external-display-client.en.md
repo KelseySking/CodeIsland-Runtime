@@ -1,8 +1,8 @@
-# External Display Client Quickstart
+﻿# External Display Client Quickstart
 
 [简体中文](external-display-client.md) | [Documentation index](README.md)
 
-This document is for developers building CodeIsland displays outside the WPF HUD, such as web UIs, plugins, terminal panels, hardware bridges, or mobile companions.
+This document is for developers building CodeOrbit displays outside the WPF HUD, such as web UIs, plugins, terminal panels, hardware bridges, or mobile companions.
 
 The stable boundary is the Runtime API described in [Display Contract](runtime-display-contract.md). Full endpoints, DTOs, and WebSocket events are documented in [API Reference](api-reference.en.md). Desktop, web, mobile, plugin, and hardware integration modes are documented in [Integration Guide](integration-guide.en.md).
 
@@ -16,12 +16,12 @@ Runtime listens locally by default:
 http://127.0.0.1:32145
 ```
 
-The WPF HUD starts `CodeIsland.RuntimeHost` in managed mode and writes the local API token to `%APPDATA%\CodeIsland\settings.json` as `api_token`.
+The WPF HUD starts `CodeOrbit.RuntimeHost` in managed mode and writes the local API token to `%APPDATA%\CodeOrbit\settings.json` as `api_token`.
 
 For standalone Runtime development, pass a token explicitly:
 
 ```powershell
-dotnet run --project src/CodeIsland.RuntimeHost -- --token dev-token --port 32145
+dotnet run --project src/CodeOrbit.RuntimeHost -- --token dev-token --port 32145
 ```
 
 Then use the same token in your display client.
