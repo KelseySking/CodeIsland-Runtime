@@ -21,5 +21,11 @@
       "SubagentStop"
     ],
     "timeout_seconds": 5
+  },
+  "event_mappings": {
+    "BeforeTool": "PreToolUse",
+    "AfterTool": "PostToolUse",
+    "BeforeAgent": "SubagentStart",
+    "AfterAgent": "SubagentStop"
   }
 }

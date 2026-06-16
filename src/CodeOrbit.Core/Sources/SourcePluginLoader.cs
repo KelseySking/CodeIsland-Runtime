@@ -62,6 +62,33 @@ public sealed class SourcePluginLoader
         return adapters;
     }
 
+    /// <summary>
+    /// Returns the set of source keys that come from bundled plugins.
+    /// </summary>
+    public HashSet<string> GetBundledSourceKeys()
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var bundledDir = GetBundledPluginDirectory();
+        if (!Directory.Exists(bundledDir))
+            return keys;
+
+        try
+        {
+            foreach (var filePath in Directory.GetFiles(bundledDir, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                var result = TryLoadPluginFromFile(filePath, []);
+                if (result.Success && result.Adapter != null)
+                    keys.Add(result.Adapter.SourceKey);
+            }
+        }
+        catch
+        {
+            // Best effort
+        }
+
+        return keys;
+    }
+
     private void LoadBundledPlugins(List<ICodeOrbitSourceAdapter> adapters, HashSet<string> loadedKeys)
     {
         var bundledDir = GetBundledPluginDirectory();
@@ -192,7 +219,8 @@ public sealed class SourcePluginLoader
                 metadata.PermissionResponseStyle,
                 metadata.EventMappings,
                 metadata.Detection,
-                metadata.HookInstallation);
+                metadata.HookInstallation,
+                filePath);
 
             return new PluginLoadResult(true, adapter, null, null);
         }

@@ -22,5 +22,14 @@
       "SubagentStop"
     ],
     "timeout_seconds": 5
+  },
+  "event_mappings": {
+    "beforeSubmitPrompt": "UserPromptSubmit",
+    "beforeShellExecution": "PreToolUse",
+    "afterShellExecution": "PostToolUse",
+    "beforeMcpToolExecution": "PreToolUse",
+    "afterMcpToolExecution": "PostToolUse",
+    "subagentStart": "SubagentStart",
+    "subagentStop": "SubagentStop"
   }
 }

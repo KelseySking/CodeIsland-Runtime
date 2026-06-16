@@ -33,7 +33,8 @@ public sealed record SourceDto(
     string DisplayName,
     string IconName,
     bool Installed,
-    SourceCapabilitiesDto Capabilities);
+    SourceCapabilitiesDto Capabilities,
+    string SourceType);
 
 public sealed record SourceStatusDto(
     string Source,

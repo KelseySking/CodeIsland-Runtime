@@ -106,9 +106,9 @@ public static class ConfigInstaller
     ];
 
     /// <summary>
-    /// 获取所有支持的 source 列表
+    /// 获取所有支持的 source 列表（内部使用，不再暴露给 API）
     /// </summary>
-    public static IReadOnlyList<string> SupportedSources => SourceFormatMap.Keys.ToList();
+    internal static IReadOnlyList<string> SupportedSources => SourceFormatMap.Keys.ToList();
 
     /// <summary>
     /// 安装 hook 到指定 AI 工具

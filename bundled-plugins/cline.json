@@ -22,5 +22,10 @@
       "Stop"
     ],
     "timeout_seconds": 10
+  },
+  "event_mappings": {
+    "TaskStart": "SessionStart",
+    "TaskResume": "UserPromptSubmit",
+    "TaskComplete": "Stop"
   }
 }

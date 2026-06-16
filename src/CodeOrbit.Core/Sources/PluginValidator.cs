@@ -82,9 +82,9 @@ public static class PluginValidator
         IReadOnlyList<string> events,
         int timeoutSeconds)
     {
-        // Validate format
-        if (!HookFormats.IsSupported(format))
-            return (false, $"Unsupported hook format: '{format}'. Supported: {string.Join(", ", HookFormats.Supported)}");
+        // Validate format (allow any non-empty format; unsupported formats will fail at install time)
+        if (string.IsNullOrWhiteSpace(format))
+            return (false, "Hook format cannot be empty");
 
         // Validate config path
         var (pathValid, pathError) = ValidateConfigPath(configPath);

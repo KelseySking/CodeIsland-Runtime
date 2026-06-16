@@ -4,7 +4,7 @@
 /// Plugin-defined source adapter that implements IPluginSourceAdapter.
 /// Loaded from JSON files in the plugin directory at runtime.
 /// </summary>
-internal sealed class PluginSourceAdapter : IPluginSourceAdapter
+public sealed class PluginSourceAdapter : IPluginSourceAdapter
 {
     private readonly IReadOnlyDictionary<string, string> _eventAliases;
     private readonly DetectionRule? _detectionRule;
@@ -17,7 +17,8 @@ internal sealed class PluginSourceAdapter : IPluginSourceAdapter
         CodeOrbitPermissionResponseStyle permissionResponseStyle,
         IReadOnlyDictionary<string, string>? eventAliases = null,
         DetectionRule? detectionRule = null,
-        HookInstallationSpec? hookInstallationSpec = null)
+        HookInstallationSpec? hookInstallationSpec = null,
+        string? filePath = null)
     {
         if (string.IsNullOrWhiteSpace(sourceKey))
             throw new ArgumentException("Source key cannot be null or whitespace.", nameof(sourceKey));
@@ -33,6 +34,7 @@ internal sealed class PluginSourceAdapter : IPluginSourceAdapter
         _eventAliases = eventAliases ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         _detectionRule = detectionRule;
         _hookInstallationSpec = hookInstallationSpec;
+        FilePath = filePath;
     }
 
     public string SourceKey { get; }
@@ -40,6 +42,8 @@ internal sealed class PluginSourceAdapter : IPluginSourceAdapter
     public string DisplayName { get; }
 
     public string IconName { get; }
+
+    public string? FilePath { get; }
 
     public CodeOrbitPermissionResponseStyle PermissionResponseStyle { get; }
 
