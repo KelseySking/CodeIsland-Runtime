@@ -123,8 +123,11 @@ Plugins specify how to install hooks into the CLI's configuration:
 
 **Supported formats**:
 - **flat**: Array format `[{event, command, timeout}]` (Cursor, Trae)
-- **nested**: Nested format `{hooks: {Event: [{command, timeout}]}}` (Gemini, Codex)
+- **nested**: Nested format `{hooks: {Event: [{command, timeout}]}}` (Gemini, Kiro, OpenCode, etc.)
+- **codex**: Codex double-nested format with `commandWindows` and long timeouts
 - **claude-matcher**: Claude format with matcher support
+- **copilot**: GitHub Copilot `{version, hooks: [...]}` format
+- **cline**: Cline per-event PowerShell script directory format
 
 ### 3. Extra Configuration
 
@@ -157,8 +160,10 @@ This ensures the CLI's hook system is enabled (e.g., Codex requires `hooks = tru
 
 Shipped with Runtime in `bundled-plugins/`:
 - **Claude Code**: 12 events, claude-matcher format
-- **Codex CLI**: 7 events, nested format with config.toml
-- **More coming soon**
+- **Codex CLI**: 7 events, codex format with config.toml
+- **GitHub Copilot**: 7 events, copilot format
+- **Cline**: 5 events, cline format
+- **Plus Cursor, Gemini CLI, Kiro, OpenCode, Qwen Code, and more bundled CLIs**
 
 Properties:
 - Loaded first

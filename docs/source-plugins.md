@@ -123,8 +123,11 @@ dotnet run --project src/CodeOrbit.RuntimeHost -- --token dev-token
 
 **支持的格式**：
 - **flat**：数组格式 `[{event, command, timeout}]`（Cursor、Trae）
-- **nested**：嵌套格式 `{hooks: {Event: [{command, timeout}]}}`（Gemini、Codex）
+- **nested**：嵌套格式 `{hooks: {Event: [{command, timeout}]}}`（Gemini、Kiro、OpenCode 等）
+- **codex**：Codex 双层嵌套格式，支持 `commandWindows` 和长超时
 - **claude-matcher**：支持 matcher 的 Claude 格式
+- **copilot**：GitHub Copilot 的 `{version, hooks: [...]}` 格式
+- **cline**：Cline 的 per-event PowerShell 脚本目录格式
 
 ### 3. 额外配置
 
@@ -157,8 +160,10 @@ dotnet run --project src/CodeOrbit.RuntimeHost -- --token dev-token
 
 Runtime 自带的插件（位于 `bundled-plugins/`）：
 - **Claude Code**：12 个事件，claude-matcher 格式
-- **Codex CLI**：7 个事件，nested 格式，支持 config.toml
-- **更多即将推出**
+- **Codex CLI**：7 个事件，codex 格式，支持 config.toml
+- **GitHub Copilot**：7 个事件，copilot 格式
+- **Cline**：5 个事件，cline 格式
+- **以及 Cursor、Gemini CLI、Kiro、OpenCode、Qwen Code 等更多内置 CLI**
 
 特性：
 - 首先加载

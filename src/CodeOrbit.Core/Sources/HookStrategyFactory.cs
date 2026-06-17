@@ -8,7 +8,7 @@ public static class HookStrategyFactory
     /// <summary>
     /// Creates a hook installation strategy for the given format.
     /// </summary>
-    /// <param name="format">Hook format (flat, nested, codex, claude-matcher)</param>
+    /// <param name="format">Hook format (flat, nested, codex, claude-matcher, copilot, cline)</param>
     /// <returns>Strategy instance, or null if format is unsupported</returns>
     public static IHookInstallationStrategy? Create(string format)
     {
@@ -21,6 +21,8 @@ public static class HookStrategyFactory
             HookFormats.Nested => new NestedHookStrategy(),
             HookFormats.Codex => new CodexHookStrategy(),
             HookFormats.ClaudeMatcher => new ClaudeMatcherStrategy(),
+            HookFormats.Copilot => new CopilotHookStrategy(),
+            HookFormats.Cline => new ClineHookStrategy(),
             _ => null
         };
     }

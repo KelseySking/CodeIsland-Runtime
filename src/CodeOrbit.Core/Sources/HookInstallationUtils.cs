@@ -7,28 +7,41 @@ namespace CodeOrbit.Core.Sources;
 /// </summary>
 internal static class HookInstallationUtils
 {
+    private const string TestUserProfileEnvironmentVariable = "CodeOrbit_TEST_USERPROFILE";
+
+    private static string UserProfileDirectory =>
+        Environment.GetEnvironmentVariable(TestUserProfileEnvironmentVariable) ??
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+    private static string AppDataDirectory =>
+        Environment.GetEnvironmentVariable(TestUserProfileEnvironmentVariable) is { Length: > 0 } testProfile
+            ? Path.Combine(testProfile, "AppData", "Roaming")
+            : Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
     /// <summary>
     /// Expands path markers (~/, $HOME, %APPDATA%, etc.) to actual paths.
     /// </summary>
     public static string ExpandPath(string path)
     {
-        if (path.StartsWith("~/") || path.StartsWith("$HOME/"))
+        if (path.StartsWith("~/") || path.StartsWith("~\\") ||
+            path.StartsWith("$HOME/") || path.StartsWith("$HOME\\"))
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return path.Replace("~/", home + Path.DirectorySeparatorChar)
-                       .Replace("$HOME/", home + Path.DirectorySeparatorChar);
+            return path.Replace("~/", UserProfileDirectory + Path.DirectorySeparatorChar)
+                       .Replace("~\\", UserProfileDirectory + Path.DirectorySeparatorChar)
+                       .Replace("$HOME/", UserProfileDirectory + Path.DirectorySeparatorChar)
+                       .Replace("$HOME\\", UserProfileDirectory + Path.DirectorySeparatorChar);
         }
 
-        if (path.StartsWith("%APPDATA%/"))
+        if (path.StartsWith("%APPDATA%/") || path.StartsWith("%APPDATA%\\"))
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return path.Replace("%APPDATA%/", appData + Path.DirectorySeparatorChar);
+            return path.Replace("%APPDATA%/", AppDataDirectory + Path.DirectorySeparatorChar)
+                       .Replace("%APPDATA%\\", AppDataDirectory + Path.DirectorySeparatorChar);
         }
 
-        if (path.StartsWith("%USERPROFILE%/"))
+        if (path.StartsWith("%USERPROFILE%/") || path.StartsWith("%USERPROFILE%\\"))
         {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return path.Replace("%USERPROFILE%/", userProfile + Path.DirectorySeparatorChar);
+            return path.Replace("%USERPROFILE%/", UserProfileDirectory + Path.DirectorySeparatorChar)
+                       .Replace("%USERPROFILE%\\", UserProfileDirectory + Path.DirectorySeparatorChar);
         }
 
         return path;

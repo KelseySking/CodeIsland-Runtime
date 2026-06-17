@@ -152,8 +152,8 @@ Defines how to install hooks into the CLI's configuration.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `format` | string | ✅ | Hook format: `"flat"`, `"nested"`, or `"claude-matcher"` |
-| `config_path` | string | ✅ | Path to config file (supports `~/` and env vars) |
+| `format` | string | ✅ | Hook format: `"flat"`, `"nested"`, `"codex"`, `"claude-matcher"`, `"copilot"`, or `"cline"` |
+| `config_path` | string | ✅ | Path to config file or directory (`cline` uses a directory; supports `~/` and env vars) |
 | `events` | string[] | ✅ | Hook events to install |
 | `timeout_seconds` | number | ✅ | Default timeout for hook execution (1-86400) |
 | `extra_config` | object | ❌ | Additional config file to modify (e.g., Codex config.toml) |
@@ -198,7 +198,7 @@ Structure: Array of hook objects
 
 ##### **Nested Format** (`"nested"`)
 
-Used by: Gemini, Codex
+Used by: Gemini, Kiro, OpenCode, and similar CLIs
 
 Structure: Nested object with event arrays
 
@@ -215,6 +215,32 @@ Structure: Nested object with event arrays
       {
         "command": "CodeOrbit.Bridge --source my-cli",
         "timeout": 10
+      }
+    ]
+  }
+}
+```
+
+##### **Codex Format** (`"codex"`)
+
+Used by: Codex CLI
+
+Structure: Double-nested object. Each event contains an entry with a `hooks` array.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CodeOrbit.Bridge --source codex",
+            "commandWindows": "C:\\path\\to\\bridge.exe --source codex",
+            "timeout": 86400,
+            "statusMessage": "Running hook"
+          }
+        ]
       }
     ]
   }
@@ -244,6 +270,40 @@ Structure: Nested with matcher support
     ]
   }
 }
+```
+
+##### **Copilot Format** (`"copilot"`)
+
+Used by: GitHub Copilot
+
+Structure: Versioned hook array.
+
+```json
+{
+  "version": 1,
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "command": "CodeOrbit.Bridge --source copilot",
+      "timeout": 10
+    }
+  ]
+}
+```
+
+##### **Cline Format** (`"cline"`)
+
+Used by: Cline
+
+Structure: `config_path` points to a hook script directory. One PowerShell script is written per event.
+
+```text
+%USERPROFILE%/Documents/Cline/Hooks/
+├── SessionStart.ps1
+├── UserPromptSubmit.ps1
+├── PreToolUse.ps1
+├── PostToolUse.ps1
+└── Stop.ps1
 ```
 
 ---

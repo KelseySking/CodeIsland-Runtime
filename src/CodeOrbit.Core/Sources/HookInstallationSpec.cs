@@ -49,6 +49,18 @@ public static class HookFormats
     public const string ClaudeMatcher = "claude-matcher";
 
     /// <summary>
+    /// Copilot format: {version, hooks: [{event, command, timeout}]}
+    /// Used by: GitHub Copilot
+    /// </summary>
+    public const string Copilot = "copilot";
+
+    /// <summary>
+    /// Cline format: per-event PowerShell scripts in the configured hooks directory.
+    /// Used by: Cline
+    /// </summary>
+    public const string Cline = "cline";
+
+    /// <summary>
     /// All supported formats.
     /// </summary>
     public static readonly IReadOnlySet<string> Supported = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -56,7 +68,9 @@ public static class HookFormats
         Flat,
         Nested,
         Codex,
-        ClaudeMatcher
+        ClaudeMatcher,
+        Copilot,
+        Cline
     };
 
     /// <summary>

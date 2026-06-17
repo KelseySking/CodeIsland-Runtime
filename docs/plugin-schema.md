@@ -152,8 +152,8 @@
 
 | 字段 | 类型 | 必需 | 描述 |
 |------|------|------|------|
-| `format` | string | ✅ | Hook 格式：`"flat"`, `"nested"`, `"codex"`, 或 `"claude-matcher"` |
-| `config_path` | string | ✅ | 配置文件路径（支持 `~/` 和环境变量） |
+| `format` | string | ✅ | Hook 格式：`"flat"`, `"nested"`, `"codex"`, `"claude-matcher"`, `"copilot"`, 或 `"cline"` |
+| `config_path` | string | ✅ | 配置文件或目录路径（`cline` 使用目录；支持 `~/` 和环境变量） |
 | `events` | string[] | ✅ | 要安装的 hook 事件 |
 | `timeout_seconds` | number | ✅ | hook 执行的默认超时时间（1-86400） |
 | `extra_config` | object | ❌ | 要修改的额外配置文件（例如 Codex 的 config.toml） |
@@ -276,6 +276,40 @@
     ]
   }
 }
+```
+
+##### **Copilot 格式** (`"copilot"`)
+
+使用者：GitHub Copilot
+
+结构：带 `version` 的 hook 对象数组
+
+```json
+{
+  "version": 1,
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "command": "CodeOrbit.Bridge --source copilot",
+      "timeout": 10
+    }
+  ]
+}
+```
+
+##### **Cline 格式** (`"cline"`)
+
+使用者：Cline
+
+结构：`config_path` 指向 hook 脚本目录，每个事件写入一个 PowerShell 脚本。
+
+```text
+%USERPROFILE%/Documents/Cline/Hooks/
+├── SessionStart.ps1
+├── UserPromptSubmit.ps1
+├── PreToolUse.ps1
+├── PostToolUse.ps1
+└── Stop.ps1
 ```
 
 ---
